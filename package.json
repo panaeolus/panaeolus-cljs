@@ -1,0 +1,27 @@
+{
+  "name": "panaeolus",
+  "version": "1.0.0",
+  "author": "Hlödver Sigurdsson",
+  "license": "GPL-3.0",
+  "scripts": {
+    "repl": "cljs-boot lumo -K -n 5555"
+  },
+  "main": "panaeolus.core",
+  "cljs": {
+    "source-paths": [
+      "src"
+    ],
+    "dependencies": {
+      "andare": "0.4.0"
+    }
+  },
+  "dependencies": {
+    "csound-api": "0.10.0",
+    "require-rebuild": "latest",
+    "lumo-cljs": "latest",
+    "async": "^2.1.4"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^1.5.7"
+  }
+}
