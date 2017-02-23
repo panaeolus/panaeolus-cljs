@@ -156,22 +156,23 @@
 
 (defn calc-mod-div [meter durations event-queue]
   (let [meter (if meter
-                (if (< 0 meter) meter 0)
-                0)]
+                (if (< 0 meter) meter 0) 0)
+        bar-length (* BEAT meter)
+        summed-durs (apply + durations)]
     (if (< 0 meter)
-      (let [bar-length (* BEAT meter)]
-        (println bar-length (last event-queue))
-        (* bar-length
-           (quot bar-length
-                 (last event-queue))))
+      (* bar-length
+         (inc (quot summed-durs meter)))
       (* BEAT
          (if (number? durations)
-           (js/Math.abs durations)
-           (apply + (map #(js/Math.abs %) durations)))))))
+           (Math/abs durations)
+           (+ summed-durs
+              (last durations)))))))
 
-(quot 440 1)
-
-(calc-mod-div 4 [1 1 2 4 9000 9000] (dur->event-queue #queue [] [1 1]))
+(quot 4 4)
+(* 4 BEAT)
+(dur->event-queue [1 1 1 1] #queue [])
+(let [d [1 1 1 1]]
+  (calc-mod-div 0 d (dur->event-queue d #queue [])))
 
 (defn dur->event-queue [durations event-queue]
   (into event-queue
