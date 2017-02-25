@@ -10,7 +10,8 @@
   (str
    "nchnls=2\n0dbfs=1\n
   sr=44100\n
-  kr=441\n
+  ksmps=32\n
+  ;; kr=441\n
   alwayson 1\n
   ;;alwayson 10000\n
   instr 1\n
