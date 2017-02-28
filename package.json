@@ -12,14 +12,15 @@
       "src"
     ],
     "dependencies": {
-      "andare": "0.4.0"
+      "andare": "0.5.0",
+      "macchiato/fs": "0.0.6"
     }
   },
   "dependencies": {
-    "csound-api": "0.10.0",
+    "csound-api": "0.10.0", 
     "require-rebuild": "latest",
     "lumo-cljs": "latest",
-    "async": "^2.1.4"
+    "abletonlink": "0.0.3"
   },
   "devDependencies": {
     "electron-rebuild": "^1.5.7"

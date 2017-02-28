@@ -1,5 +1,12 @@
 (ns panaeolus.algo.chain)
 
-(defn chains [v]
+
+(chains [[1 1 1 1]
+         []])
+
+(defn chains* [v]
   (loop [v v]
-    nil))
+    (if (empty? v)
+      v
+      (let []
+        (recur (rest v))))))

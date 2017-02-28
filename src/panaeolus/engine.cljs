@@ -1,15 +1,22 @@
 (ns panaeolus.engine
   (:require [cljs.core.async :as async
-             :refer [<! >! chan timeout]]
-            [panaeolus.orchestra-init :refer [orc-init-top]])
+             :refer [<! >! chan timeout take! put!]]
+            [panaeolus.orchestra-init :refer [orc-init]]
+            [goog.object :as o])
   (:require-macros [cljs.core.async.macros
-                    :refer [go go-loop]]))
+                    :refer [go go-loop]])
+  (:import [goog.structs PriorityQueue]))
 
 
 (declare csound)
 
+(def abletonlink (js/require "abletonlink"))
+
+(def Abletonlink (new abletonlink))
+
+
 (if-not csound
-  (do (def csound ((js* "require") "csound-api"))
+  (do (def csound (js/require "csound-api"))
       (def Csound (.Create csound)))
   (do
     (.InputMessage csound Csound "e")
@@ -19,17 +26,17 @@
 
 (.SetOption csound Csound "-odac")
 (.SetOption csound Csound "-+rtaudio=alsa")
-(.CompileOrc csound Csound (str orc-init-top))
+(.CompileOrc csound Csound orc-init)
 (.Start csound Csound)
-
+(.PerformAsync csound Csound (fn [] (.Stop csound Csound)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GLOBAL CHANNELS AND ATOMS ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def metro-channel (chan))
+(def metro-channel (chan (async/sliding-buffer 2047)))
 
-(def poll-channel (chan))
+(def poll-channel (chan (async/sliding-buffer 2048)))
 
 (def pattern-registry (atom {}))
 
@@ -37,64 +44,67 @@
 ;; METRONOME CLOCK CONTROLLER ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def BEAT (.GetKsmps csound Csound))
 
-(def TICKS-PER-SECOND (atom BEAT))
+;; (.-beat Abletonlink)
+;;(.stopUpdate Abletonlink)
+(.startUpdate Abletonlink 60 (fn [beat phase bpm]
+                               ;; (println beat (.toFixed phase 4) bpm)
+                               (go (>! metro-channel beat))
+                               ))
+
+(def TICKS-PER-SECOND 256)
 
 (defn bpm! [bpm]
-  (let [bps (/ 60 bpm)
-        tps (int (* bps BEAT))]
-    (reset! TICKS-PER-SECOND tps)))
+  (set! (.-bpm Abletonlink) bpm))
 
 
 ;; (.GetControlChannel csound Csound "metro" nil)
 
-(defonce performance-loop
-  (atom (.PerformKsmpsAsync
-         csound Csound
-         (fn [] (go (>! metro-channel true)))
-         (fn [] (.Stop csound Csound)))))
+;; (defonce performance-loop
+;;   (.PerformKsmpsAsync
+;;    csound Csound
+;;    (fn [] (go (>! metro-channel true)))
+;;    (fn [] (.Stop csound Csound))))
 
+(comment 
+  (def q (new PriorityQueue))
+  (.enqueue q 2 "b")
+  (.enqueue q 1 "c")
+  (.peekKey q)
+  (.dequeue q)
+  (.getValues q) (.isEmpty q))
 
 (def main-loop
-  (atom (go-loop [event-poll #queue []
-                  poll #queue []
-                  tick 0]
-          (let [[e-poll poll] (if (peek poll)
-                                [(into event-poll poll)
-                                 #queue []]
-                                [event-poll #queue []])]
-            (when (<! metro-channel)
-              (if-not (empty? e-poll)
-                (recur
-                 (reduce
-                  (fn [init v] 
-                    (let [divided (mod tick (second v))]
-                      (if (= divided (first v))
-                        (do
-                          (go (>! (nth v 2) tick))
-                          init)
-                        (conj init v))))
-                  []
-                  e-poll)
-                 (conj poll (async/poll! poll-channel))
-                 (inc tick))
-                (recur
-                 ;; (inc ti)
-                 e-poll
-                 (conj poll (async/poll! poll-channel))
-                 (inc tick))))))))
+  (let [priority-queue (new PriorityQueue)]
+    (go-loop [new-events #queue []] 
+      (let [new-events (if-not (empty? new-events)
+                         (do (.enqueue priority-queue
+                                       (first (peek new-events))
+                                       (second (peek new-events)))
+                             (pop new-events))
+                         new-events)]
+        (when-let [time (<! metro-channel)]
+          ;; (prn (.getValues priority-queue))
+          (if (.isEmpty priority-queue)
+            (recur (if-let [poll (async/poll! poll-channel)]
+                     (conj new-events poll) new-events))
+            (do
+              (prn time (.peekKey priority-queue))
+              (when (>= time (.peekKey priority-queue))
+                (>! (.dequeue priority-queue) true))
+              (recur (if-let [poll (async/poll! poll-channel)]
+                       (conj new-events poll) new-events)))))))))
 
 (comment 
   (go (js/console.log (<! metro-channel)))
 
-  (go (let [event-c (chan 1)]
+  (go (let [event-c (chan)]
         (>! poll-channel [0 300 event-c])
         (when (<! event-c)
           (.InputMessage csound Csound "i 2 0 1"))))
 
   (.EvalCode csound Csound
-             "instr 2\nasig poscil 0.1, (100 + rnd(480))\nouts asig,asig\nendin"))
+             "instr 2\nasig poscil 0.9, (100 + rnd(480))\nouts asig,asig\nendin"))
 
 
 
