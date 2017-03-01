@@ -1,4 +1,4 @@
-instr 199
+instr 1
   iamp = ampdb(p4+7)
   ifrq = 227
   p3 = 0.41*p3
