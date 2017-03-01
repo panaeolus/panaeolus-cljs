@@ -34,7 +34,7 @@
 ;; GLOBAL CHANNELS AND ATOMS ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def metro-channel (chan (async/sliding-buffer 2047)))
+(def metro-channel (chan (async/sliding-buffer 1)))
 
 (def poll-channel (chan (async/sliding-buffer 2048)))
 
@@ -47,16 +47,13 @@
 
 ;; (.-beat Abletonlink)
 ;;(.stopUpdate Abletonlink)
-(.startUpdate Abletonlink 60 (fn [beat phase bpm]
-                               ;; (println beat (.toFixed phase 4) bpm)
-                               (go (>! metro-channel beat))
-                               ))
+(.startUpdate Abletonlink 10 (fn [beat phase bpm]
+                               (go (async/offer! metro-channel beat))))
 
 (def TICKS-PER-SECOND 256)
 
 (defn bpm! [bpm]
   (set! (.-bpm Abletonlink) bpm))
-
 
 ;; (.GetControlChannel csound Csound "metro" nil)
 
@@ -68,15 +65,18 @@
 
 (comment 
   (def q (new PriorityQueue))
-  (.enqueue q 2 "b")
-  (.enqueue q 1 "c")
+  (.enqueue q 3 "c")
+  (.enqueue q 1 "b")
+  (.enqueue q 1 "a")
   (.peekKey q)
   (.dequeue q)
   (.getValues q) (.isEmpty q))
 
+
+
 (def main-loop
   (let [priority-queue (new PriorityQueue)]
-    (go-loop [new-events #queue []] 
+    (go-loop [new-events #queue []]
       (let [new-events (if-not (empty? new-events)
                          (do (.enqueue priority-queue
                                        (first (peek new-events))
@@ -84,14 +84,15 @@
                              (pop new-events))
                          new-events)]
         (when-let [time (<! metro-channel)]
-          ;; (prn (.getValues priority-queue))
+          #_(prn (.getKeys priority-queue)
+                 (.getValues priority-queue))
           (if (.isEmpty priority-queue)
             (recur (if-let [poll (async/poll! poll-channel)]
                      (conj new-events poll) new-events))
             (do
-              (prn time (.peekKey priority-queue))
-              (when (>= time (.peekKey priority-queue))
-                (>! (.dequeue priority-queue) true))
+              (while (>= time (.peekKey priority-queue))
+                (let [dequeued-chan (.dequeue priority-queue)]
+                  (go (>! dequeued-chan true))))
               (recur (if-let [poll (async/poll! poll-channel)]
                        (conj new-events poll) new-events)))))))))
 
@@ -99,7 +100,7 @@
   (go (js/console.log (<! metro-channel)))
 
   (go (let [event-c (chan)]
-        (>! poll-channel [0 300 event-c])
+        (>! poll-channel [1 300 event-c])
         (when (<! event-c)
           (.InputMessage csound Csound "i 2 0 1"))))
 
