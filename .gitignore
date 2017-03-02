@@ -16,3 +16,4 @@ pom.xml
 npm-debug.log
 .lumo_cache
 node_modules
+.dir-locals*
