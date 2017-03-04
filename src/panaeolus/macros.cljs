@@ -2,6 +2,7 @@
   (:require [lumo.repl :refer [get-current-ns]]
             [macchiato.fs :as fs]
             [cljs.env :as env]
+            [cljs.js :as cljs]
             [panaeolus.engine :refer [csound Csound]]
             [panaeolus.orchestra-parser :as p]))
 
@@ -22,9 +23,6 @@
      nil))
 
 
-(def ^:private low_conga
-  (fs/slurp "src/panaeolus/csound/orchestra/tr808/low_conga.orc"))
-
 (defmacro definstrument [instr-name csound-string p-fields]
   `(let [keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
                             (->> ~p-fields
@@ -42,25 +40,37 @@
        [~(symbol "&") {~(symbol "keys") keys-vector#
                        :or or-map#
                        :as env#}]
-       (let [p-count# (count (keys or-map#))
-             env# (merge or-map# env#)]
-         (apply str "i " instr-number# " 0"
-                (for [param# (p/generate-p-keywords
-                              p-count#)]
-                  (str " " (-> param#
-                               param-lookup-map#
-                               env#))))))))
+       (fn [~(symbol "&") {~(symbol "keys") keys-vector#
+                           :as closure-env#}]
+         (let [p-count# (count (keys or-map#))
+               final-env# (merge or-map# env# closure-env#)]
+           (apply str "i " instr-number# " 0"
+                  (for [param# (p/generate-p-keywords
+                                p-count#)]
+                    (str " " (-> param#
+                                 param-lookup-map#
+                                 final-env#)))))))))
+
+(defmacro demo [instr]
+  `(.InputMessage
+    csound Csound (~instr :dur 5)))
 
 (comment 
-  (defn test4 [& {:keys [amp freq rvb]
-                  :or {:amp -10 :freq 110 :rvb 1}}]
-    (str "i 3 0 " ))
-
-  (test3 :amp 100)
-
-  (panaeolus.macros/definstrument "test3" low_conga {:p4 {:amp -10}
+  (panaeolus.macros/definstrument "test3" low_conga {:p3 {:dur 0.2}
+                                                     :p4 {:amp -10}
                                                      :p5 {:freq 110}
-                                                     :p6 {:rvb 1}}))
+                                                     :p6 {:rvb 1}})
+  (fn? (test3))
+
+  
+
+  (panaeolus.macros/demo (panaeolus.instruments.tr808/low_conga :amp 0)))
+
+
+(defn test4 [& {:keys [amp freq rvb]
+                :or {:amp -10 :freq 110 :rvb 1}}]
+  (str "i 3 0 " ))
+
 
 
 

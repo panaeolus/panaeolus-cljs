@@ -1,7 +1,6 @@
 (ns panaeolus.orchestra-parser
   (:require [panaeolus.engine :refer [csound Csound]]
             [clojure.string :as string]
-            [lumo.core :refer [eval]]
             [cljs.env :as env]))
 
 
@@ -19,7 +18,7 @@
           (recur (inc indx) (str audio-vars char)))))))
 
 (defn- replace-instr-number [instr num]
-  (string/replace instr #"instr\s+[0-9]*" (str "instr " num)))
+  (clojure.string/replace instr #"instr\s+[0-9]*" (str "instr " num)))
 
 (defn compile-csound-instrument
   "name is the function name for the instr

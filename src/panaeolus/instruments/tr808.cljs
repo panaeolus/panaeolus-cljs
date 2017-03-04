@@ -1,40 +1,40 @@
 (ns panaeolus.instruments.tr808
   (:require [macchiato.fs :as fs]
             [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.orchestra-parser :refer [compile-csound-instrument]]))
+            [panaeolus.orchestra-parser :refer [compile-csound-instrument]]
+            [panaeolus.macros :refer [definstrument demo]]))
 
-(def ^:private low_conga
-  (fs/slurp "src/panaeolus/csound/orchestra/tr808/low_conga.orc"))
+(definstrument "low_conga"
+  (fs/slurp "src/panaeolus/csound/orchestra/tr808/low_conga.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}})
 
-(def ^:private mid_conga
-  (fs/slurp "src/panaeolus/csound/orchestra/tr808/mid_conga.orc"))
+(definstrument "mid_conga"
+  (fs/slurp "src/panaeolus/csound/orchestra/tr808/mid_conga.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}})
 
-(def ^:private high_conga
-  (fs/slurp "src/panaeolus/csound/orchestra/tr808/high_conga.orc"))
+(definstrument "high_conga"
+  (fs/slurp "src/panaeolus/csound/orchestra/tr808/high_conga.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}})
 
-(def ^:private maraca
-  (fs/slurp "src/panaeolus/csound/orchestra/tr808/maraca.orc"))
+(definstrument "maraca"
+  (fs/slurp "src/panaeolus/csound/orchestra/tr808/maraca.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}})
 
-(def ^:private clap
-  (fs/slurp "src/panaeolus/csound/orchestra/tr808/clap.orc"))
+(definstrument "clap"
+  (fs/slurp "src/panaeolus/csound/orchestra/tr808/clap.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}})
 
-(compile-csound-instrument "lowConga" low_conga)
-
-(compile-csound-instrument "midConga" mid_conga)
-
-(compile-csound-instrument "highConga" high_conga)
-
-(compile-csound-instrument "maraca" maraca)
-
-(compile-csound-instrument "clap" clap)
+(comment 
+  (demo (low_conga :amp 0))
+  (demo (mid_conga :amp 0))
+  (demo (high_conga :amp 0))
+  (demo (maraca :amp 0))
+  (demo (clap :amp 0))
+  )
 
 
-(do
-  (.EvalCode csound Csound low_conga)
-  (.CompileOrc csound Csound mid_conga)
-  (.CompileOrc csound Csound high_conga)
-  (.CompileOrc csound Csound maraca)
-  (.CompileOrc csound Csound clap))
-
-(.InputMessage csound Csound "i 1 0 0.2 0")
-;;(.EvalCode csound Csound (fs/slurp "src/panaeolus/csound/tables.orc"))
