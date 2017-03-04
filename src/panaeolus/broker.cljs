@@ -82,8 +82,8 @@
                 queue initial-queue
                 queue-buffer initial-queue
                 new-user-data nil]
-        (let [{:keys [pause kill dur input-message-buffer meter]
-               :or {input-message-buffer input-messages meter meter}} new-user-data
+        (let [{:keys [pause kill dur input-messages meter]
+               :or {input-messages input-messages meter meter}} new-user-data
               [queue-buffer mod-div-buffer] (if dur
                                               [(create-event-queue dur input-messages)
                                                (calc-mod-div meter dur)]
@@ -122,33 +122,20 @@
                      (async/poll! user-input-channel)))))))))
 
 
-(.CompileOrc csound Csound
-             "instr 2\nasig poscil 0.1, 280\nouts asig,asig\nendin")
-
-(.CompileOrc csound Csound
-             "instr 3\nasig poscil 0.1, 480\nouts asig,asig\nendin")
-
-(.CompileOrc csound Csound
-             "instr 4\nasig poscil 0.1, 480\nouts asig,asig\nendin")
-
-;; (.EvalCode csound Csound
-;;            "instr 2\nasig poscil 0.1, (100 + rnd(480))\nouts asig,asig\nendin")
-
-
 (comment 
   (pattern-loop-queue
    {:dur [1 1 1 -0.25 0.25 0.5]
     :pattern-name :a
-    :input-messages "i 2 0 0.09"
+    :input-messages "i 3 0 0.1 -3"
     :meter 4
     :kill true
     })
 
   (bpm! 361)
   (pattern-loop-queue
-   {:dur [2 2]
+   {:dur [1 1 1 0.5 0.5]
     :pattern-name :c
-    :input-message-buffer "i 3 0 1.1"
+    :input-messages "i 2 0 0.01 2"
     :meter 0
     :kill true
     })

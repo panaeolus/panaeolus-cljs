@@ -4,7 +4,8 @@
             [cljs.env :as env]
             [cljs.js :as cljs]
             [panaeolus.engine :refer [csound Csound]]
-            [panaeolus.orchestra-parser :as p]))
+            [panaeolus.orchestra-parser :as p]
+            [panaeolus.broker :refer [pattern-loop-queue]]))
 
 ;; (ns panaeolus.macros)
 
@@ -16,12 +17,21 @@
          new-symbols# (keys (get-in @env/*compiler*
                                     [:cljs.analyzer/namespaces ~from-namespace :defs]))
          merged-map# (reduce #(assoc %1 %2 ~from-namespace) into-map# new-symbols#)]
-     (prn into-namespace#)
      (swap! env/*compiler* assoc-in [:cljs.analyzer/namespaces
                                      into-namespace#
                                      :uses] merged-map#)
      nil))
 
+
+(defmacro pull-macros [from-namespace]
+  `(let [into-namespace# (symbol (lumo.repl/get-current-ns))
+         new-macros# (get-in @env/*compiler*
+                             [:cljs.analyzer/namespaces ~from-namespace :use-macros])]
+     (prn (str "nyja: " new-macros#))
+     (swap! env/*compiler* assoc-in [:cljs.analyzer/namespaces
+                                     into-namespace#
+                                     :use-macros] new-macros#)
+     nil))
 
 (defmacro definstrument [instr-name csound-string p-fields]
   `(let [keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
@@ -34,8 +44,7 @@
                         (apply merge (vals ~p-fields)))
          instr-number# (p/compile-csound-instrument
                         ~instr-name ~csound-string)
-         param-lookup-map# (p/fold-hashmap ~p-fields)
-         ]
+         param-lookup-map# (p/fold-hashmap ~p-fields)]
      (defn ~(symbol instr-name) 
        [~(symbol "&") {~(symbol "keys") keys-vector#
                        :or or-map#
@@ -55,7 +64,27 @@
   `(.InputMessage
     csound Csound (~instr :dur 5)))
 
-(comment 
+
+(defmacro pat-> [name instr & forms]
+  (loop [x {:input-messages instr}, forms forms]
+    (if forms
+      (let [form (first forms)
+            threaded (if (seq? form)
+                       (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                       (list form x))]
+        (recur threaded (next forms)))
+      `(pattern-loop-queue (merge ~x {:pattern-name ~name 
+                                      :meter 0})))))
+
+(comment
+  (panaeolus.macros/pat-> ::a "i 3 0 0.1 -3"
+                          (assoc :dur [1 1 0.5 0.25 -0.25]))
+
+  (apply -> (list 1 inc))
+
+  (comp {:a 1} (get % :a))
+
+
   (panaeolus.macros/definstrument "test3" low_conga {:p3 {:dur 0.2}
                                                      :p4 {:amp -10}
                                                      :p5 {:freq 110}
