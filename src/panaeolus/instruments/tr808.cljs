@@ -36,5 +36,5 @@
   (.CompileOrc csound Csound maraca)
   (.CompileOrc csound Csound clap))
 
-(.InputMessage csound Csound "i 199 0 0.2 0")
+(.InputMessage csound Csound "i 1 0 0.2 0")
 ;;(.EvalCode csound Csound (fs/slurp "src/panaeolus/csound/tables.orc"))

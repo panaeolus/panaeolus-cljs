@@ -1,14 +1,13 @@
 (ns panaeolus.orchestra-parser
-  (:require [macchiato.fs :as fs]
-            [panaeolus.engine :refer [csound Csound]]
-            [clojure.string :as string]))
+  (:require [panaeolus.engine :refer [csound Csound]]
+            [clojure.string :as string]
+            [lumo.core :refer [eval]]
+            [cljs.env :as env]))
+
 
 (def csound-instrument-map
   "Map instr-name to instr-number"
   (atom {"%taken%" 1}))
-
-(def ^:private low_conga
-  (fs/slurp "src/panaeolus/csound/orchestra/tr808/low_conga.orc"))
 
 (defn- determine-outs [instr]
   (let [instr-char-len (count instr)]
@@ -22,7 +21,6 @@
 (defn- replace-instr-number [instr num]
   (string/replace instr #"instr\s+[0-9]*" (str "instr " num)))
 
-
 (defn compile-csound-instrument
   "name is the function name for the instr
    instr is the csound slurp of the instr definition."
@@ -35,8 +33,15 @@
         instr-string (replace-instr-number instr instr-number) ]
     (.CompileOrc csound Csound instr-string)
     (swap! csound-instrument-map assoc name instr-number)
-    instr-string))
+    instr-number))
+
+(defn generate-p-keywords [p-count]
+  (map #(keyword (str "p" %)) (range 3 (+ 3 p-count))))
+
+(defn fold-hashmap [h-map]
+  (reduce-kv #(assoc %1 %2 (first (keys %3))) {} h-map))
 
 
-(defn definstrument [])
-
+#_(get-in @env/*compiler* [:cljs.analyzer/namespaces
+                           'panaeolus.orchestra-parser
+                           :uses])

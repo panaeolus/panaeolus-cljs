@@ -146,7 +146,7 @@
     :kill true
     })
 
-  (bpm! 161)
+  (bpm! 361)
   (pattern-loop-queue
    {:dur [2 2]
     :pattern-name :c
