@@ -41,6 +41,35 @@
   (reduce-kv #(assoc %1 %2 (first (keys %3))) {} h-map))
 
 
+(defn ast-input-messages-builder [env input-msg-fn param-lookup-map]
+  (let [dur (if-let [d (:dur env)]
+              (if (vector? d) d [d]) [1])
+        dur (remove #(or (neg? %)
+                         (zero? %)) dur)
+        len (let [s (or (:len env) (count dur))]
+              (if (zero? s) 16 s)) 
+        dur (take len (cycle dur))
+        param-keys (keys param-lookup-map)]
+    (loop [indx 0
+           input-messages []]
+      (if-not (= len indx)
+        (recur (inc indx)
+               (loop [k param-keys
+                      params []]
+                 (if (empty? k)
+                   (conj input-messages (apply input-msg-fn params))
+                   (let [param-name ((first k) param-lookup-map)
+                         param-value (if (= :dur param-name)
+                                       dur (get env param-name)) 
+                         ;; POLYPHONY COULD BE ADDED HERE
+                         value (if (number? param-value)
+                                 param-value
+                                 (nth param-value (mod indx (count param-value))))]
+                     (recur
+                      (rest k)
+                      (into params [param-name value]))))))
+        (assoc env :input-messages input-messages)))))
+
 #_(get-in @env/*compiler* [:cljs.analyzer/namespaces
                            'panaeolus.orchestra-parser
                            :uses])

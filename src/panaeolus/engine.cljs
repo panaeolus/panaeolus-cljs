@@ -50,7 +50,7 @@
 (.startUpdate Abletonlink 10 (fn [beat phase bpm]
                                (go (async/offer! metro-channel beat))))
 
-(def TICKS-PER-SECOND 256)
+;; (def TICKS-PER-SECOND 256)
 
 (defn bpm! [bpm]
   (set! (.-bpm Abletonlink) bpm))
@@ -73,28 +73,30 @@
   (.getValues q) (.isEmpty q))
 
 
-
 (def main-loop
   (let [priority-queue (new PriorityQueue)]
     (go-loop [new-events #queue []]
       (let [new-events (if-not (empty? new-events)
-                         (do (.enqueue priority-queue
-                                       (first (peek new-events))
-                                       (second (peek new-events)))
-                             (pop new-events))
+                         (do 
+                           (.enqueue priority-queue
+                                     (first (peek new-events))
+                                     (second (peek new-events)))
+                           (pop new-events))
                          new-events)]
-        (when-let [time (<! metro-channel)]
+        (when-let [time (<! metro-channel)] 
           #_(prn (.getKeys priority-queue)
                  (.getValues priority-queue))
           (if (.isEmpty priority-queue)
             (recur (if-let [poll (async/poll! poll-channel)]
                      (conj new-events poll) new-events))
             (do
+              ;;(prn "time: " time ">=" (.peekKey priority-queue))
               (while (>= time (.peekKey priority-queue))
                 (let [dequeued-chan (.dequeue priority-queue)]
                   (go (>! dequeued-chan true))))
               (recur (if-let [poll (async/poll! poll-channel)]
-                       (conj new-events poll) new-events)))))))))
+                       (conj new-events poll)
+                       new-events)))))))))
 
 (comment 
   (go (js/console.log (<! metro-channel)))

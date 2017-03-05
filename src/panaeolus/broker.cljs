@@ -58,7 +58,7 @@
                                          (first input-messages))]))))))))))
 
 (defn- calculate-timestamp [current-time mod-div beat]
-  (let [current-beat (mod current-time mod-div)
+  (let [current-beat (max (mod current-time mod-div) 0)
         delta (- beat current-beat)]
     (if (neg? delta)
       (+ beat current-time (- mod-div current-beat))
@@ -66,7 +66,7 @@
 
 
 (defn pattern-loop-queue [env]
-  (if-let [user-input-channel (get @pattern-registry (:pattern-name env))]
+  (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
     (go (>! user-input-channel env))
     (let [{:keys [dur pattern-name meter input-messages]} env
           user-input-channel (chan 1)
@@ -93,7 +93,7 @@
           (if kill
             (swap! pattern-registry dissoc pattern-name user-input-channel)
             (if-let [next-event (peek queue)] 
-              (do ;; (println next-event)
+              (do  ;; (prn next-event)
                 (go (>! poll-channel [(calculate-timestamp
                                        (.-beat Abletonlink)
                                        mod-div (first next-event))
