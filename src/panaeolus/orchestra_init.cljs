@@ -15,7 +15,9 @@
   " )
 
 (def ^:private orc-init-tables
-  (fs/slurp "src/panaeolus/csound/tables.orc"))
+  (str
+   (fs/slurp "src/panaeolus/csound/tables/tables.orc") "\n" 
+   (fs/slurp "src/panaeolus/csound/tables/oscil_bank.orc")))
 
 (def ^:private orc-init-instr-1
   "

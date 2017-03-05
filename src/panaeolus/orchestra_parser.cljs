@@ -39,7 +39,7 @@
 
 (defn fold-hashmap [h-map]
   (reduce-kv #(assoc %1 %2 (first (keys %3))) {} h-map))
-
+(concat nil (list 5))
 
 (defn ast-input-messages-builder [env instr]
   (let [instr (if (fn? (first instr))

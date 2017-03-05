@@ -66,6 +66,7 @@
 
 
 (defn pattern-loop-queue [env]
+  (prn env)
   (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
     (go (>! user-input-channel env))
     (let [{:keys [dur pattern-name meter input-messages]} env

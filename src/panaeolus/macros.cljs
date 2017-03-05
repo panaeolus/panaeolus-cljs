@@ -70,9 +70,6 @@
        (run! #(.InputMessage csound Csound %) (map #((first %) :dur dur#) instr#))
        (.InputMessage csound Csound ((first instr#) :dur dur#)))))
 
-(panaeolus.macros/demo (panaeolus.instruments.tr808/low_conga :amp -10)
-                       ;;(panaeolus.instruments.tr808/high_conga :amp -10)
-                       1.1)
 
 (defmacro pat-> [pattern-name instr & forms]  
   (loop [env {}, forms forms]
@@ -84,14 +81,7 @@
         (recur threaded (next forms)))        
       `(let [env# ~env
              ast# (p/ast-input-messages-builder env# ~instr)]
-         ;; ast#
-         ;; nil
          (pattern-loop-queue (merge ast# {:pattern-name ~(str pattern-name)}))))))
-
-
-#_(panaeolus.macros/group (panaeolus.instruments.tr808/low_conga :amp -10)
-                          (panaeolus.instruments.tr808/high_conga :amp -10))
-;; (panaeolus.macros/seq {} [x x x y x _])
 
 (defmacro seq
   "Parses a drum sequence, a _ symbol
@@ -99,7 +89,7 @@
    is equal in time. Numbers represent instrument
    group index."
   [env v]
-  (let [grid (or (:grid env) 1)] 
+  (let [grid `(/ 1 (or (:grid ~env) 1))] 
     (loop [v v
            indx []
            dur []]
@@ -112,9 +102,9 @@
                      (conj indx (Math/abs (first v)))
                      (conj indx 0)))
                  (if rest?
-                   (conj dur (* -1 grid))
+                   (conj dur `(* -1 ~grid))
                    (conj dur grid))))
-        `(assoc ~env :dur ~dur :instr-indicies ~indx)))))
+        `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true)))))
 
 
 

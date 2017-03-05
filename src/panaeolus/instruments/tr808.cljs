@@ -1,7 +1,6 @@
 (ns panaeolus.instruments.tr808
   (:require [macchiato.fs :as fs]
             [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.orchestra-parser :refer [compile-csound-instrument]]
             [panaeolus.macros :refer [definstrument demo]]))
 
 (definstrument "low_conga"
