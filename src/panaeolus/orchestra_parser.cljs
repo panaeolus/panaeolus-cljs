@@ -41,34 +41,46 @@
   (reduce-kv #(assoc %1 %2 (first (keys %3))) {} h-map))
 
 
-(defn ast-input-messages-builder [env input-msg-fn param-lookup-map]
-  (let [dur (if-let [d (:dur env)]
+(defn ast-input-messages-builder [env instr]
+  (let [instr (if (fn? (first instr))
+                [instr] instr)
+        instr-count (count instr)
+        dur (if-let [d (:dur env)]
               (if (vector? d) d [d]) [1])
         dur (remove #(or (neg? %)
                          (zero? %)) dur)
         len (let [s (or (:len env) (count dur))]
               (if (zero? s) 16 s)) 
         dur (take len (cycle dur))
-        param-keys (keys param-lookup-map)]
+        ;; param-keys (keys param-lookup-map)
+        ;; group? (if-not (fn? input-msg-fn) true false)
+        instr-indicies (:instr-indicies env)]
     (loop [indx 0
            input-messages []]
       (if-not (= len indx)
         (recur (inc indx)
-               (loop [k param-keys
-                      params []]
-                 (if (empty? k)
-                   (conj input-messages (apply input-msg-fn params))
-                   (let [param-name ((first k) param-lookup-map)
-                         param-value (if (= :dur param-name)
-                                       dur (get env param-name)) 
-                         ;; POLYPHONY COULD BE ADDED HERE
-                         value (if (number? param-value)
-                                 param-value
-                                 (nth param-value (mod indx (count param-value))))]
-                     (recur
-                      (rest k)
-                      (into params [param-name value]))))))
-        (assoc env :input-messages input-messages)))))
+               (let [instr-index (if (empty? instr-indicies)
+                                   0
+                                   (min instr-count
+                                        (nth instr-indicies (mod indx (count instr-indicies)))))
+                     instr' (nth instr instr-index)
+                     env' (merge env (nth instr' 2))]
+                 (loop [param-keys (keys (second instr'))
+                        params []]
+                   (if (empty? param-keys)
+                     (conj input-messages (apply (first instr') params))
+                     (let [param-name (get (second instr') (first param-keys))
+                           param-value (if (= :dur param-name)
+                                         dur (get env' param-name)) 
+                           ;; POLYPHONY COULD BE ADDED HERE
+                           value (if (number? param-value)
+                                   param-value
+                                   (nth param-value (mod indx (count param-value))))]
+                       (recur
+                        (rest param-keys)
+                        (into params [param-name value])))))))
+        (assoc env :input-messages input-messages
+               :dur (vec dur))))))
 
 #_(get-in @env/*compiler* [:cljs.analyzer/namespaces
                            'panaeolus.orchestra-parser

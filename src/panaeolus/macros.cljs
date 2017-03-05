@@ -62,12 +62,19 @@
         param-lookup-map#
         (merge or-map# env#)])))
 
-(defmacro demo [instr]
-  `(.InputMessage
-    csound Csound ((first ~instr) :dur 5)))
+(defmacro demo [instr & dur]
+  `(let [instr# ~instr
+         dur# (or ~(first dur) 5)]
+     (if (or (vector? (first instr#))
+             (list? (first instr#)))
+       (run! #(.InputMessage csound Csound %) (map #((first %) :dur dur#) instr#))
+       (.InputMessage csound Csound ((first instr#) :dur dur#)))))
 
+(panaeolus.macros/demo (panaeolus.instruments.tr808/low_conga :amp -10)
+                       ;;(panaeolus.instruments.tr808/high_conga :amp -10)
+                       1.1)
 
-(defmacro pat-> [pattern-name instr & forms]
+(defmacro pat-> [pattern-name instr & forms]  
   (loop [env {}, forms forms]
     (if forms
       (let [form (first forms)
@@ -75,15 +82,56 @@
                        (with-meta `(~(first form) ~env ~@(next form)) (meta form))
                        (list form env))]
         (recur threaded (next forms)))        
-      `(let [[input-msg-fn# param-lookup-map# default-env#] ~instr 
-             env# (merge default-env# ~env)
-             meter# (or (:meter env#) 0)
-             ast# (p/ast-input-messages-builder env# input-msg-fn# param-lookup-map#)]
-         (pattern-loop-queue (merge ast# {:pattern-name ~(str pattern-name) 
-                                          :meter meter#}))))))
+      `(let [env# ~env
+             ast# (p/ast-input-messages-builder env# ~instr)]
+         ;; ast#
+         ;; nil
+         (pattern-loop-queue (merge ast# {:pattern-name ~(str pattern-name)}))))))
+
+
+#_(panaeolus.macros/group (panaeolus.instruments.tr808/low_conga :amp -10)
+                          (panaeolus.instruments.tr808/high_conga :amp -10))
+;; (panaeolus.macros/seq {} [x x x y x _])
+
+(defmacro seq
+  "Parses a drum sequence, a _ symbol
+   becomes a rest. Every tick in a sequence
+   is equal in time. Numbers represent instrument
+   group index."
+  [env v]
+  (let [grid (or (:grid env) 1)] 
+    (loop [v v
+           indx []
+           dur []]
+      (if-not (empty? v)
+        (let [rest? (= '_ (first v))]
+          (recur (rest v)
+                 (if rest?
+                   indx
+                   (if (integer? (first v))
+                     (conj indx (Math/abs (first v)))
+                     (conj indx 0)))
+                 (if rest?
+                   (conj dur (* -1 grid))
+                   (conj dur grid))))
+        `(assoc ~env :dur ~dur :instr-indicies ~indx)))))
+
+
+
 
 
 (comment
+  (panaeolus.macros/pat-> ::a (group (panaeolus.instruments.tr808/low_conga :amp -10)
+                                     (panaeolus.instruments.tr808/mid_conga :amp -10)
+                                     (panaeolus.instruments.tr808/high_conga :amp -10))
+                          ;; (fn [env] {}) 
+                          (panaeolus.macros/seq [0 _ 1 _ 0 _ 2 _ 1])
+                          ;; (assoc :dur [1 1 0.5 -0.25 -0.25])
+                          
+                          
+                          (assoc :kill true)
+                          )
+
   (panaeolus.macros/pat-> ::a (panaeolus.instruments.tr808/low_conga :amp -10)
                           (assoc :dur [1 1 0.5 -0.25 -0.25])
                           ;; (assoc :kill true)
