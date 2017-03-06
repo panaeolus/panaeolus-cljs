@@ -18,6 +18,14 @@ instr 1
   0, 0, 238, 0, 8000, 1, 1, 1, 1, -1, iwave, \
   giCos, giCos, gieqffn, gieqlfn, gieqqfn
   asig = aL*iamp*aenv
- 
+
+  kdepth linseg 0,0.1,0,0.1,1
+  
+  kFLFO lfo kdepth,4.1234,0
+  kFEnv linsegr	0,0.5+0.001,2,4+0.001,1,4.3+0.001,0
+  kCFoct limit 4.5+kFEnv,4,14 ;;0 = p
+  kCF = cpsoct(kCFoct) 
+  asig tonex asig, kCF,6 ;;p?
+  
   outs asig, asig
 endin
