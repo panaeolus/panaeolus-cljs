@@ -11,4 +11,4 @@
    :p5 {:midi 36}
    :p6 {:fmd 0.2}})
 
-;; (demo (group (bass_trombone :midi 52 :amp -12 :fmd 1.15))  20)
+(demo (group (bass_trombone :midi 92 :amp -4 :fmd 0.15))  1)

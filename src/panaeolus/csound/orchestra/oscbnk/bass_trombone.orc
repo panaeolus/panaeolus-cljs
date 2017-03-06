@@ -22,9 +22,10 @@ instr 1
   kdepth linseg 0,0.1,0,0.1,1
   
   kFLFO lfo kdepth,4.1234,0
-  kFEnv linsegr	0,0.5+0.001,2,4+0.001,1,4.3+0.001,0
-  kCFoct limit 4.5+kFEnv,4,14 ;;0 = p
-  kCF = cpsoct(kCFoct) 
+  kFEnv linsegr 0,0.001,2,p3,1,0.001,0
+  kCFoct limit 4.5*kFEnv,4,14 ;;0 = p
+  kCF = cpsoct(kCFoct)
+  printk 0.1, kCF
   asig tonex asig, kCF,6 ;;p?
   
   outs asig, asig
