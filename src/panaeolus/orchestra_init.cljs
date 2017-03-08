@@ -36,20 +36,19 @@
   instr 10000
   aMasterLeft zar 0
   aMasterRight zar 1
-  kMasterVolume chnget \"mastervolume\"
-  outs aMasterLeft*kMasterVolume,\\ 
-       aMasterRight*kMasterVolume
+  outs aMasterLeft,\\ 
+       aMasterRight
   ;;generating a different filename each time csound renders
-  itim     date\n
-  Stim     dates     itim
-  Syear    strsub    Stim, 20, 24
-  Smonth   strsub    Stim, 4, 7
-  Sday     strsub    Stim, 8, 10
-  iday     strtod    Sday
-  Shor     strsub    Stim, 11, 13
-  Smin     strsub    Stim, 14, 16
-  Ssec     strsub    Stim, 17, 19
-  Sfilnam  sprintf  \"%s_%s_%02d_%s_%s_%s.wav\", Syear, Smonth, iday, Shor,Smin, Ssec
+  ;; itim     date\n
+  ;; Stim     dates     itim
+  ;; Syear    strsub    Stim, 20, 24
+  ;; Smonth   strsub    Stim, 4, 7
+  ;; Sday     strsub    Stim, 8, 10
+  ;; iday     strtod    Sday
+  ;; Shor     strsub    Stim, 11, 13
+  ;; Smin     strsub    Stim, 14, 16
+  ;; Ssec     strsub    Stim, 17, 19
+  ;; Sfilnam  sprintf  \"%s_%s_%02d_%s_%s_%s.wav\", Syear, Smonth, iday, Shor,Smin, Ssec
   ;;fout Sfilnam, 4, aMasterLeft*kMasterVolume, aMasterRight*kMasterVolume
   zacl 0,4
   endin

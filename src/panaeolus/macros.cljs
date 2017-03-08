@@ -89,7 +89,7 @@
    is equal in time. Numbers represent instrument
    group index."
   [env v]
-  (let [grid `(/ 1 (or (:grid ~env) 1))] 
+  (let [grid `(/ 1 (or (:grid ~env) 1))]
     (loop [v v
            indx []
            dur []]

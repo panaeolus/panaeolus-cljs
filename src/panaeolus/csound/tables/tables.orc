@@ -1,4 +1,5 @@
 giSaw ftgen 0,0,4096,7,1,4096,-1
+giSawRev ftgen 0,0,4096,7,-1,4096,1
 giSine ftgen 0, 0, 65537, 10, 1
 giCos ftgen 0,0,4096,11,1 
 giExp ftgen 0, 0, 1024, 19, 0.5, 0.5, 270, 0.5

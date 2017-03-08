@@ -15,7 +15,7 @@
   (let [meter (if meter
                 (if (< 0 meter) meter 0) 0)
         bar-length meter
-        summed-durs (apply + durations)]
+        summed-durs (apply + (map Math/abs durations))]
     (if (< 0 meter)
       (* bar-length
          (inc (quot (dec summed-durs) bar-length)))
@@ -66,11 +66,11 @@
 
 
 (defn pattern-loop-queue [env]
-  (prn env)
+  ;; (prn env)
   (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
     (go (>! user-input-channel env))
     (let [{:keys [dur pattern-name meter input-messages]} env
-          user-input-channel (chan 1)
+          user-input-channel (chan 0)
           engine-poll-channel (chan)
           initial-queue (create-event-queue dur input-messages)
           initial-mod-div (calc-mod-div meter dur)]
@@ -82,21 +82,23 @@
                 meter meter
                 queue initial-queue
                 queue-buffer initial-queue
-                new-user-data nil]
-        (let [{:keys [pause kill dur input-messages meter]
-               :or {input-messages input-messages meter meter}} new-user-data
+                new-user-data nil
+                last-tick (.-beat Abletonlink)
+                stop? false]
+        ;; (println mod-div queue dur)
+        (let [{:keys [pause kill stop? dur input-messages meter]
+               :or {input-messages input-messages meter meter stop? stop?}} new-user-data
               [queue-buffer mod-div-buffer] (if dur
                                               [(create-event-queue dur input-messages)
                                                (calc-mod-div meter dur)]
                                               [queue-buffer mod-div-buffer])
-              new-user-data nil]
-          ;; (println queue)
+              new-user-data nil] 
           (if kill
             (swap! pattern-registry dissoc pattern-name user-input-channel)
             (if-let [next-event (peek queue)] 
               (do  ;; (prn next-event)
                 (go (>! poll-channel [(calculate-timestamp
-                                       (.-beat Abletonlink)
+                                       last-tick
                                        mod-div (first next-event))
                                       engine-poll-channel]))
                 ;; (println "Reynir að skjóta")
@@ -112,15 +114,21 @@
                          meter
                          (pop queue)
                          queue-buffer
-                         (async/poll! user-input-channel))))
-              (recur (inc index)
+                         (async/poll! user-input-channel)
+                         (.-beat Abletonlink)
+                         stop?)))
+              (recur 0
                      (inc a-index)
                      mod-div-buffer
                      mod-div-buffer
                      meter
                      queue-buffer
                      queue-buffer
-                     (async/poll! user-input-channel)))))))))
+                     (if stop?
+                       (<! user-input-channel)
+                       (async/poll! user-input-channel))
+                     (.-beat Abletonlink)
+                     false))))))))
 
 
 (comment 

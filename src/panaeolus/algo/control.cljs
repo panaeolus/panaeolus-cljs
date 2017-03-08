@@ -1,8 +1,21 @@
 (ns panaeolus.algo.control
-  (:require [panaeolus.engine :refer [bpm!]]))
+  (:require
+   [cljs.core.async :refer [>!]]
+   [panaeolus.engine :refer [bpm! pattern-registry]])
+  (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (defn kill [env]
   (assoc env :kill true))
+
+(defn killall []
+  (go (loop [c (vals @pattern-registry)]
+        (if (empty? c)
+          (reset! pattern-registry {})
+          (do (>! (first c) {:kill true})
+              (recur (rest c)))))))
+
+(defn stop [env]
+  (assoc env :stop? true))
 
 (defn len [env length]
   (assoc env :len length))
@@ -26,3 +39,7 @@
    the group."
   [& instruments]
   (vec instruments))
+
+
+(defn xtratim [env xtratim]
+  (assoc env :xtratim xtratim))
