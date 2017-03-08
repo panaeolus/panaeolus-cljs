@@ -38,39 +38,22 @@
 
 (def poll-channel (chan (async/sliding-buffer 2048)))
 
-(def pattern-registry (atom {}))
+(def pattern-registry (atom {:forever #{}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; METRONOME CLOCK CONTROLLER ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+;; (.GetKsmps csound Csound)
 ;; (.-beat Abletonlink)
 ;;(.stopUpdate Abletonlink)
-(.startUpdate Abletonlink 10 (fn [beat phase bpm]
-                               (go (async/offer! metro-channel beat))))
+(.startUpdate Abletonlink 10
+              (fn [beat phase bpm]
+                (go (async/offer! metro-channel beat))))
 
-;; (def TICKS-PER-SECOND 256)
 
 (defn bpm! [bpm]
   (set! (.-bpm Abletonlink) bpm))
-
-;; (.GetControlChannel csound Csound "metro" nil)
-
-;; (defonce performance-loop
-;;   (.PerformKsmpsAsync
-;;    csound Csound
-;;    (fn [] (go (>! metro-channel true)))
-;;    (fn [] (.Stop csound Csound))))
-
-(comment 
-  (def q (new PriorityQueue))
-  (.enqueue q 3 "c")
-  (.enqueue q 1 "b")
-  (.enqueue q 1 "a")
-  (.peekKey q)
-  (.dequeue q)
-  (.getValues q) (.isEmpty q))
 
 
 (def main-loop

@@ -3,7 +3,7 @@
             [macchiato.fs :as fs]
             [cljs.env :as env]
             [cljs.js :as cljs]
-            [panaeolus.engine :refer [csound Csound]]
+            [panaeolus.engine :refer [csound Csound pattern-registry]]
             [panaeolus.orchestra-parser :as p]
             [panaeolus.broker :refer [pattern-loop-queue]]))
 
@@ -53,14 +53,15 @@
                             :as closure-env#}]
           (let [p-count# (count (keys or-map#))
                 final-env# (merge or-map# env# closure-env#)]
-            (apply str "i " instr-number# " 0"
+            (apply str "i " (or (:p1 final-env#) instr-number#) " 0"
                    (for [param# (p/generate-p-keywords
                                  p-count#)]
                      (str " " (-> param#
                                   param-lookup-map#
                                   final-env#))))))
         param-lookup-map#
-        (merge or-map# env#)])))
+        (merge or-map# env#)
+        instr-number#])))
 
 (defmacro demo [instr & dur]
   `(let [instr# ~instr
@@ -70,6 +71,22 @@
        (run! #(.InputMessage csound Csound %) (map #((first %) :dur dur#) instr#))
        (.InputMessage csound Csound ((first instr#) :dur dur#)))))
 
+
+(defmacro forever [instr & dur]
+  `(let [instr# ~instr
+         dur# (or ~(first dur) 5)
+         p1# (str (nth instr# 3) ".001")]
+     (if (or (vector? (first instr#))
+             (list? (first instr#)))
+       (println "Only single instruments allowed.")
+       (if-let [instrnum# (some #{p1#} (:forever @pattern-registry))]
+         (do
+           (swap! pattern-registry assoc :forever (disj (:forever @pattern-registry) p1#))
+           (.InputMessage csound Csound ((first instr#) :dur dur# :p1 (str "-" instrnum#))))
+         (do
+           (swap! pattern-registry assoc :forever (conj (:forever @pattern-registry) p1#))
+           (.InputMessage csound Csound (let [f# ((first instr#) :dur (str "-" dur#) :p1 p1#)]
+                                          f#)))))))
 
 (defmacro pat-> [pattern-name instr & forms]  
   (loop [env {}, forms forms]

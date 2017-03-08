@@ -27,6 +27,9 @@
   endin
   ")
 
+(def ^:private orc-init-udo
+  (fs/slurp "src/panaeolus/csound/udo/Partial.udo"))
+
 (def ^:private orc-init-fx
   (fs/slurp "src/panaeolus/csound/fx/reverb.orc"))
 
@@ -58,6 +61,7 @@
 (def orc-init
   (str orc-init-constants
        orc-init-tables
-       orc-init-instr-1
+       orc-init-instr-1 "\n"
+       orc-init-udo "\n"
        orc-init-fx
        orc-init-bottom))

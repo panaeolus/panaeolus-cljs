@@ -10,6 +10,7 @@ instr 1
   aosc3	oscil iamp, ifreq - 4, ifn, -1
   asig	= (aosc+aosc2+aosc3)*.133
   asig	butterlp asig, icutoff
-
+  aDeclick linseg 0, 0.02, 1, p3 - 0.05, 1, 0.02, 0, 0.01, 0
+  asig *= aDeclick
   outs	asig, asig
 endin

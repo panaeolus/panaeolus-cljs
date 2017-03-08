@@ -1,0 +1,24 @@
+instr 1
+  idur    =       p3
+  kamp    =       ampdb(p4)
+  kfreq   =       p5
+
+  iAmpAttack = limit(idur*0.2, 0.01, 1)
+  iAmpDecay = idur-iAmpAttack
+  kAmpEnv linseg 0, iAmpAttack, 1, iAmpDecay, 0.0001
+  iFreqEnvAttack = limit(idur*0.8, 0.01, 10)
+  iFreqEnvDecay = idur - iFreqEnvAttack
+  kFreqEnv expseg 1, iFreqEnvAttack, 1.5, iFreqEnvDecay, 1
+  krand randomi kfreq/2, kfreq, 1
+  aSaw1 vco2 kamp, kfreq*1.005, 2, 0.5, sqrt(krand*0.6)
+  aSaw2 vco2 kamp*0.9, kfreq, 2, 0.5, sqrt(krand*0.7)
+  aSaw3 vco2 kamp*0.8, kfreq*(3/2), 2, 0.5, sqrt(krand*0.8)
+  aFilt vlowres (aSaw1+aSaw2+aSaw3)/24, 1, 0.9, 4, 10+sqrt(krand*2)
+  if p3 < 0 then
+    aDeclick linsegr 0, 0.02, 1, 1, 0
+  else
+    aDeclick linseg 0, 0.02, 1, p3 - 0.05, 1, 0.02, 0, 0.01, 0
+  endif
+  aFilt *= aDeclick
+  outs  aFilt, aFilt
+endin
