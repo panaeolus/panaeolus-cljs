@@ -11,7 +11,7 @@
   nchnls=2\n
   0dbfs=1\n
   sr=44100\n
-  ksmps=1\n
+  ksmps=32\n
   " )
 
 (def ^:private orc-init-tables
@@ -21,9 +21,10 @@
 
 (def ^:private orc-init-instr-1
   "
-  alwayson 1
-  instr 1
+  ;;alwayson 1
   zakinit 4, 1 
+  instr 1
+  setksmps 1
   endin
   ")
 
@@ -42,17 +43,17 @@
   outs aMasterLeft,\\ 
        aMasterRight
   ;;generating a different filename each time csound renders
-  ;; itim     date\n
-  ;; Stim     dates     itim
-  ;; Syear    strsub    Stim, 20, 24
-  ;; Smonth   strsub    Stim, 4, 7
-  ;; Sday     strsub    Stim, 8, 10
-  ;; iday     strtod    Sday
-  ;; Shor     strsub    Stim, 11, 13
-  ;; Smin     strsub    Stim, 14, 16
-  ;; Ssec     strsub    Stim, 17, 19
-  ;; Sfilnam  sprintf  \"%s_%s_%02d_%s_%s_%s.wav\", Syear, Smonth, iday, Shor,Smin, Ssec
-  ;;fout Sfilnam, 4, aMasterLeft*kMasterVolume, aMasterRight*kMasterVolume
+  itim     date
+  Stim     dates     itim
+  Syear    strsub    Stim, 20, 24
+  Smonth   strsub    Stim, 4, 7
+  Sday     strsub    Stim, 8, 10
+  iday     strtod    Sday
+  Shor     strsub    Stim, 11, 13
+  Smin     strsub    Stim, 14, 16
+  Ssec     strsub    Stim, 17, 19
+  Sfilnam  sprintf  \"/home/hlolli/Music/%s_%s_%02d_%s_%s_%s.wav\", Syear, Smonth, iday, Shor,Smin, Ssec
+  fout Sfilnam, 4, aMasterLeft, aMasterRight
   zacl 0,4
   endin
   ")
