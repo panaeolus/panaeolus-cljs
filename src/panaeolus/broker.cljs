@@ -103,11 +103,10 @@
                                       engine-poll-channel]))
                 ;; (println "Reynir að skjóta")
                 (when (<! engine-poll-channel)
-                  ;; (println "KOM TIL SKILA")
-                  (.ReadScore csound Csound (second next-event))
-                  ;; (go (.InputMessage csound Csound (second next-event)))
+                  ;; (go (.ReadScore csound Csound (second next-event)))
+                  ;; (.ScoreEvent csound Csound (second next-event)) 
+                  (go (.InputMessage csound Csound (second next-event)))
                   ;; (println "BUINN AÐ SKILA!")
-                  ;; (println "Skýtur")
                   (recur (inc index)
                          (inc a-index)
                          mod-div
@@ -150,6 +149,8 @@
     :kill true
     })
 
+  (.ScoreEvent csound Csound "i" #js [2 0 1])
+  (.InputMessage csound Csound "i 2 0 1")
   (dur->event-queue [1 1 1 1] #queue [])
 
   (go (let [event-c (chan)]

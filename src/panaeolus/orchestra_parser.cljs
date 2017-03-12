@@ -18,10 +18,15 @@
           (mapv string/trim (string/split audio-vars #","))
           (recur (inc indx) (str audio-vars char)))))))
 
-(defn- insert-zak-system [instr]
-  (let [[aL aR] (determine-outs instr)]
-    (string/replace instr #"\bout?.*" (str "zawm " aL ",0\n"
-                                           "zawm " aR ",1\n"))))
+(defn- insert-zak-and-fx [instr & fx]
+  (let [[aL aR] (determine-outs instr)
+        zak-system (str "zawm " aL ",0\n"
+                        "zawm " aR ",1\n")
+        fx (if-not (empty? fx)
+             (apply str (map #(% aL aR) fx))
+             "")
+        fx-and-zak (str  fx "\n" zak-system)]
+    (string/replace instr #"\bout?.*" fx-and-zak)))
 
 (defn- replace-instr-number [instr num]
   (clojure.string/replace instr #"instr\s+[0-9]*" (str "instr " num)))
@@ -39,7 +44,10 @@
         instr-string (insert-zak-system instr-string)]
     (.CompileOrc csound Csound instr-string)
     (swap! csound-instrument-map assoc name instr-number)
-    instr-number))
+    instr-number
+    instr-string))
+
+(compile-csound-instrument "a" (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc"))
 
 (defn generate-p-keywords [p-count]
   (map #(keyword (str "p" %)) (range 3 (+ 3 p-count))))

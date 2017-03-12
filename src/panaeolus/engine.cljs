@@ -49,7 +49,8 @@
 ;;(.stopUpdate Abletonlink)
 (.startUpdate Abletonlink 10
               (fn [beat phase bpm]
-                (go (async/offer! metro-channel beat))))
+                ;; (prn beat)
+                (go (>! metro-channel beat))))
 
 
 (defn bpm! [bpm]
