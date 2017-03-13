@@ -41,26 +41,27 @@
                               (apply max)
                               inc))
         instr-string (replace-instr-number instr instr-number)
-        instr-string (insert-zak-system instr-string)]
+        instr-string (insert-zak-and-fx instr-string)]
     (.CompileOrc csound Csound instr-string)
     (swap! csound-instrument-map assoc name instr-number)
     instr-number
-    instr-string))
+    ;;instr-string
+    ))
 
-(compile-csound-instrument "a" (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc"))
+;;(compile-csound-instrument "a" (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc"))
 
 (defn generate-p-keywords [p-count]
   (map #(keyword (str "p" %)) (range 3 (+ 3 p-count))))
 
 (defn fold-hashmap [h-map]
   (reduce-kv #(assoc %1 %2 (first (keys %3))) {} h-map))
-(concat nil (list 5))
+
 
 ;; Note to self
 ;; here the dur is really p3 but not
 ;; the duration between events.
 (defn ast-input-messages-builder [env instr]
-  ;; (prn env)
+  (prn env)
   (let [instr (if (fn? (first instr))
                 [instr] instr)
         instr-count (count instr)
@@ -87,7 +88,8 @@
                                    0
                                    (min instr-count
                                         (nth instr-indicies (mod indx (count instr-indicies)))))
-                     instr' (nth instr instr-index)
+                     _ (prn instr-index instr-indicies)
+                     instr' (nth instr instr-index) 
                      env' (merge env (nth instr' 2))]
                  (loop [param-keys (keys (second instr'))
                         params []]

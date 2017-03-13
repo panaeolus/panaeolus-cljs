@@ -53,7 +53,7 @@
   Smin     strsub    Stim, 14, 16
   Ssec     strsub    Stim, 17, 19
   Sfilnam  sprintf  \"/home/hlolli/Music/%s_%s_%02d_%s_%s_%s.wav\", Syear, Smonth, iday, Shor,Smin, Ssec
-  fout Sfilnam, 4, aMasterLeft, aMasterRight
+  ;;  fout Sfilnam, 4, aMasterLeft, aMasterRight
   zacl 0,4
   endin
   ")

@@ -39,9 +39,9 @@
                                  vals
                                  (map keys)
                                  (map (comp symbol name first))))
-         keys-vector# (-> keys-vector# distinct)
+         keys-vector# (-> keys-vector# distinct) 
          or-map# (merge {:dur 0.5}
-                        (apply merge (vals ~p-fields)))
+                        (apply merge (vals ~p-fields))) 
          instr-number# (p/compile-csound-instrument
                         ~instr-name ~csound-string)
          param-lookup-map# (p/fold-hashmap ~p-fields)]
@@ -61,6 +61,9 @@
                                   final-env#))))))
         param-lookup-map#
         (merge or-map# env#)
+        ;; recompile-fn
+        (fn [& fx#] (apply p/compile-csound-instrument
+                           ~instr-name ~csound-string fx#))
         instr-number#])))
 
 (defmacro demo [instr & dur]
@@ -70,7 +73,6 @@
              (list? (first instr#)))
        (run! #(.InputMessage csound Csound %) (map #((first %) :dur dur#) instr#))
        (.InputMessage csound Csound ((first instr#) :dur dur#)))))
-
 
 (defmacro forever [instr & dur]
   `(let [instr# ~instr
@@ -88,7 +90,7 @@
            (.InputMessage csound Csound (let [f# ((first instr#) :dur (str "-" dur#) :p1 p1#)]
                                           f#)))))))
 
-(defmacro pat-> [pattern-name instr & forms]  
+(defmacro pat-> [pattern-name instr & forms]
   (loop [env {}, forms forms]
     (if forms
       (let [form (first forms)
