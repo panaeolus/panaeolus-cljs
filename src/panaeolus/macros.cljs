@@ -32,7 +32,7 @@
                                      :use-macros] new-macros#)
      nil))
 
-
+;; Lata þennan returne-a líka fx
 (defmacro definstrument [instr-name csound-string p-fields]
   `(let [keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
                             (->> ~p-fields
@@ -79,7 +79,7 @@
 (defmacro forever [instr & dur]
   `(let [instr# ~instr
          dur# (or ~(first dur) 5)
-         p1# (str (nth instr# 3) ".001")]
+         p1# (str (last instr#) ".001")]
      (if (or (vector? (first instr#))
              (list? (first instr#)))
        (println "Only single instruments allowed.")
@@ -102,7 +102,9 @@
         (recur threaded (next forms)))        
       `(let [env# ~env
              ast# (p/ast-input-messages-builder env# ~instr)]
-         (pattern-loop-queue (merge ast# {:pattern-name ~(str pattern-name)}))))))
+         (prn ast#)
+         (pattern-loop-queue (merge ast# {:pattern-name ~(str pattern-name)
+                                          :recompile-fn ~(nth instr 3)}))))))
 
 (defmacro seq
   "Parses a drum sequence, a _ symbol

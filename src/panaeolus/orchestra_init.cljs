@@ -32,7 +32,8 @@
   (fs/slurp "src/panaeolus/csound/udo/Partial.udo"))
 
 (def ^:private orc-init-fx
-  (fs/slurp "src/panaeolus/csound/fx/reverb.orc"))
+  ;; (fs/slurp "src/panaeolus/csound/fx/reverb.orc")
+  (fs/slurp "src/panaeolus/csound/fx/lofi.udo"))
 
 (def ^:private orc-init-bottom
   "
@@ -64,5 +65,5 @@
        orc-init-tables
        orc-init-instr-1 "\n"
        orc-init-udo "\n"
-       orc-init-fx
+       orc-init-fx "\n"
        orc-init-bottom))

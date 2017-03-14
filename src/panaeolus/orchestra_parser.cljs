@@ -22,7 +22,6 @@
   (let [[aL aR] (determine-outs instr)
         zak-system (str "zawm " aL ",0\n"
                         "zawm " aR ",1\n")
-        _ (prn "ohohoh" fx)
         fx (if-not (empty? fx)
              (if (fn? (first fx))
                ((first fx) aL aR)

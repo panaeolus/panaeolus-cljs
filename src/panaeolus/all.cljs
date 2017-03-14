@@ -1,6 +1,7 @@
 (ns panaeolus.all
   (:require
    panaeolus.engine
+   panaeolus.fx
    panaeolus.algo.control
    panaeolus.instruments.tr808
    panaeolus.instruments.synths
@@ -10,6 +11,7 @@
 
 (do
   (panaeolus.macros/pull-symbols 'panaeolus.engine)
+  (panaeolus.macros/pull-symbols 'panaeolus.fx)
   (panaeolus.macros/pull-symbols 'panaeolus.algo.control)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.tr808)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.oscil-bank)

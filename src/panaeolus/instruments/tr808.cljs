@@ -1,7 +1,7 @@
 (ns panaeolus.instruments.tr808
   (:require [macchiato.fs :as fs]
             [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.macros :refer [definstrument demo]]
+            [panaeolus.macros :refer [definstrument demo forever]]
             [panaeolus.fx :refer [freeverb lofi]]))
 
 (definstrument "low_conga"
@@ -30,8 +30,7 @@
    :p4 {:amp -12}})
 
 
-(comment 
-  (demo (low_conga :amp 0 :fx (lofi :bits 2 :fold 0.001)))
+(comment   
   (demo (mid_conga :amp 0))
   (demo (high_conga :amp 0))
   (demo (maraca :amp 0))

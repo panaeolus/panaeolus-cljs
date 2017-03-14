@@ -84,39 +84,43 @@
                 queue-buffer initial-queue
                 new-user-data nil
                 last-tick (.-beat Abletonlink)
-                stop? false]
+                stop? false
+                fx (:fx env)]
         ;; (println mod-div queue dur)
-        (let [{:keys [pause kill stop? dur input-messages meter]
-               :or {input-messages input-messages meter meter stop? stop?}} new-user-data
+        (let [{:keys [pause kill stop? dur input-messages meter new-fx]
+               :or {input-messages input-messages meter meter stop? stop?
+                    new-fx fx}} new-user-data
               [queue-buffer mod-div-buffer] (if dur
                                               [(create-event-queue dur input-messages)
                                                (calc-mod-div meter dur)]
                                               [queue-buffer mod-div-buffer])
-              new-user-data nil] 
+              _ (when-not (= new-fx fx) ((:recompile-fn new-user-data)))
+              new-user-data nil]
           (if kill
             (swap! pattern-registry dissoc pattern-name user-input-channel)
             (if-let [next-event (peek queue)] 
-              (do  ;; (prn next-event)
-                (go (>! poll-channel [(calculate-timestamp
-                                       last-tick
-                                       mod-div (first next-event))
-                                      engine-poll-channel]))
-                ;; (println "Reynir að skjóta")
-                (when (<! engine-poll-channel)
-                  ;; (go (.ReadScore csound Csound (second next-event)))
-                  ;; (.ScoreEvent csound Csound (second next-event)) 
-                  (go (.InputMessage csound Csound (second next-event)))
-                  ;; (println "BUINN AÐ SKILA!")
-                  (recur (inc index)
-                         (inc a-index)
-                         mod-div
-                         mod-div-buffer
-                         meter
-                         (pop queue)
-                         queue-buffer
-                         (async/poll! user-input-channel)
-                         (.-beat Abletonlink)
-                         stop?)))
+              (do (prn fx) 
+                  (go (>! poll-channel [(calculate-timestamp
+                                         last-tick
+                                         mod-div (first next-event))
+                                        engine-poll-channel]))
+                  ;; (println "Reynir að skjóta")
+                  (when (<! engine-poll-channel)
+                    ;; (go (.ReadScore csound Csound (second next-event)))
+                    ;; (.ScoreEvent csound Csound (second next-event)) 
+                    (go (.InputMessage csound Csound (second next-event)))
+                    ;; (println "BUINN AÐ SKILA!")
+                    (recur (inc index)
+                           (inc a-index)
+                           mod-div
+                           mod-div-buffer
+                           meter
+                           (pop queue)
+                           queue-buffer
+                           (async/poll! user-input-channel)
+                           (.-beat Abletonlink)
+                           stop?
+                           new-fx)))
               (recur 0
                      (inc a-index)
                      mod-div-buffer
@@ -128,7 +132,8 @@
                        (<! user-input-channel)
                        (async/poll! user-input-channel))
                      (.-beat Abletonlink)
-                     false))))))))
+                     false
+                     new-fx))))))))
 
 
 (comment 
