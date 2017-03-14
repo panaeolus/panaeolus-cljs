@@ -2,7 +2,8 @@
   (:require [macchiato.fs :as fs]
             [panaeolus.algo.control :refer [group]]
             [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.macros :refer [definstrument demo]]))
+            [panaeolus.macros :refer [definstrument demo]]
+            [panaeolus.fx :refer [freeverb lofi]]))
 
 (definstrument "nuclear"
   (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc")
@@ -32,5 +33,5 @@
    :p5 {:freq 100}})
 
 
-(demo (organ :freq 2201 :amp -20) 2)
+;; (demo (organ :freq 1001 :amp -20 :fx (lofi)) 2)
 

@@ -22,8 +22,11 @@
   (let [[aL aR] (determine-outs instr)
         zak-system (str "zawm " aL ",0\n"
                         "zawm " aR ",1\n")
+        _ (prn "ohohoh" fx)
         fx (if-not (empty? fx)
-             (apply str (map #(% aL aR) fx))
+             (if (fn? (first fx))
+               ((first fx) aL aR)
+               (apply str (map #(% aL aR) (first fx))))
              "")
         fx-and-zak (str  fx "\n" zak-system)]
     (string/replace instr #"\bout?.*" fx-and-zak)))
@@ -41,12 +44,10 @@
                               (apply max)
                               inc))
         instr-string (replace-instr-number instr instr-number)
-        instr-string (insert-zak-and-fx instr-string)]
+        instr-string (insert-zak-and-fx instr-string (first fx))]
     (.CompileOrc csound Csound instr-string)
     (swap! csound-instrument-map assoc name instr-number)
-    instr-number
-    ;;instr-string
-    ))
+    instr-number))
 
 ;;(compile-csound-instrument "a" (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc"))
 
@@ -61,7 +62,6 @@
 ;; here the dur is really p3 but not
 ;; the duration between events.
 (defn ast-input-messages-builder [env instr]
-  (prn env)
   (let [instr (if (fn? (first instr))
                 [instr] instr)
         instr-count (count instr)
@@ -88,7 +88,6 @@
                                    0
                                    (min instr-count
                                         (nth instr-indicies (mod indx (count instr-indicies)))))
-                     _ (prn instr-index instr-indicies)
                      instr' (nth instr instr-index) 
                      env' (merge env (nth instr' 2))]
                  (loop [param-keys (keys (second instr'))

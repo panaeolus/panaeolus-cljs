@@ -62,13 +62,15 @@
         param-lookup-map#
         (merge or-map# env#)
         ;; recompile-fn
-        (fn [& fx#] (apply p/compile-csound-instrument
-                           ~instr-name ~csound-string fx#))
+        (fn [] (p/compile-csound-instrument
+                ~instr-name ~csound-string (:fx env#)))
         instr-number#])))
 
 (defmacro demo [instr & dur]
   `(let [instr# ~instr
          dur# (or ~(first dur) 5)]
+     ;; Always recompile demo
+     ((nth instr# 3))
      (if (or (vector? (first instr#))
              (list? (first instr#)))
        (run! #(.InputMessage csound Csound %) (map #((first %) :dur dur#) instr#))
