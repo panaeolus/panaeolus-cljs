@@ -22,16 +22,18 @@
   (fs/slurp "src/panaeolus/csound/orchestra/synth/asfm.orc")
   {:p3 {:dur 1}
    :p4 {:amp -10}
-   :p5 {:freq 200}
-   :p6 {:mod 5.5}
+   :p5 {:freq 100}
+   :p6 {:mod 3}
    :p7 {:index 1}})
 
 (definstrument "organ"
   (fs/slurp "src/panaeolus/csound/orchestra/synth/organ.orc")
   {:p3 {:dur 1}
    :p4 {:amp -10}
-   :p5 {:freq 100}})
+   :p5 {:freq 500}})
 
 
-;; (demo (organ :freq 1001 :amp -20 :fx (lofi)) 2)
+(demo (asfm  :freq 100 :cutoff 1200 :amp 0 :mod 2.9 :fx [(lofi :bits 4) (freeverb :sr 9000)] :index 2))
+
+(demo (sweet :freq 101 :amp -20 :fx (freeverb :sr 90000)))
 

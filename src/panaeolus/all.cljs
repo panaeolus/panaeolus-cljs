@@ -6,7 +6,7 @@
    panaeolus.instruments.tr808
    panaeolus.instruments.synths
    panaeolus.instruments.oscil-bank
-   [panaeolus.macros :refer [pat-> demo seq forever]]))
+   [panaeolus.macros :refer [pat demo seq forever]]))
 
 
 (do

@@ -92,7 +92,7 @@
            (.InputMessage csound Csound (let [f# ((first instr#) :dur (str "-" dur#) :p1 p1#)]
                                           f#)))))))
 
-(defmacro pat-> [pattern-name instr & forms]
+(defmacro pat [pattern-name instr & forms]
   (loop [env {}, forms forms]
     (if forms
       (let [form (first forms)

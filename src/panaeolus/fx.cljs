@@ -6,7 +6,7 @@
   [& {:keys [room damp sr]
       :or {room 0.9 damp 0.35 sr 44100}}]
   (fn [aL aR]
-    (str (format"\n%s, %s freeverb %s, %s, %f, %f, %d\n" aL aR aL aR room damp sr)
+    (str (format"\n%s, %s freeverb %s*1.5, %s*1.5, %f, %f, %d\n" aL aR aL aR room damp sr)
          "kRvbEnv expsegr 1, p3, 1, p3*2, .01\n"
          aL " *= kRvbEnv\n" aR " *= kRvbEnv\n")))
 
