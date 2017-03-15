@@ -92,7 +92,7 @@
            (.InputMessage csound Csound (let [f# ((first instr#) :dur (str "-" dur#) :p1 p1#)]
                                           f#)))))))
 
-(defmacro pat [pattern-name instr & forms]
+(defmacro pat [pattern-name instr & forms] 
   (loop [env {}, forms forms]
     (if forms
       (let [form (first forms)
@@ -100,11 +100,12 @@
                        (with-meta `(~(first form) ~env ~@(next form)) (meta form))
                        (list form env))]
         (recur threaded (next forms)))        
-      `(let [env# ~env
-             ast# (p/ast-input-messages-builder env# ~instr)]
-         (prn ast#)
-         (pattern-loop-queue (merge ast# {:pattern-name ~(str pattern-name)
-                                          :recompile-fn ~(nth instr 3)}))))))
+      `(let [instr# ~instr
+             env# ~env 
+             ast# (p/ast-input-messages-builder env# instr#)]
+         (pattern-loop-queue (merge (nth instr# 2)
+                                    ast# {:pattern-name ~(str pattern-name)
+                                          :recompile-fn (nth instr# 3)}))))))
 
 (defmacro seq
   "Parses a drum sequence, a _ symbol
