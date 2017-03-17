@@ -56,9 +56,11 @@
             (apply str "i " (or (:p1 final-env#) instr-number#) " 0"
                    (for [param# (p/generate-p-keywords
                                  p-count#)]
-                     (str " " (-> param#
-                                  param-lookup-map#
-                                  final-env#))))))
+                     (if-let [fun# (get-in ~p-fields [param# :fn])]
+                       (str " " (fun# final-env#))
+                       (str " " (-> param#
+                                    param-lookup-map#
+                                    final-env#)))))))
         param-lookup-map#
         (merge or-map# env#)
         ;; recompile-fn
@@ -111,7 +113,7 @@
   "Parses a drum sequence, a _ symbol
    becomes a rest. Every tick in a sequence
    is equal in time. Numbers represent instrument
-   group index."
+   group index or sample bank midi."
   [env v]
   (let [grid `(/ 1 (or (:grid ~env) 1))]
     (loop [v v
@@ -128,7 +130,9 @@
                  (if rest?
                    (conj dur `(* -1 ~grid))
                    (conj dur grid))))
-        `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true)))))
+        (if `(contains? ~env :bank)
+          `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
+          `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true))))))
 
 
 

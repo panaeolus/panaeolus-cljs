@@ -4,6 +4,9 @@ instr 1
   ifreq = p5
   isample = p6
   iloop = p7
+  ilen ftlen isample
+  isr ftsr isample
+  p3 = ((ilen/isr)*(1/ifreq))
   ichannels = ftchnls(isample)
   ifreq limit ifreq, 0.00001, sr/2
 

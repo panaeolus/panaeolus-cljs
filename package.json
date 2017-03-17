@@ -20,7 +20,8 @@
     "csound-api": "0.10.0", 
     "require-rebuild": "latest",
     "lumo-cljs": "latest",
-    "abletonlink": "0.0.3"
+    "abletonlink": "0.0.3",
+    "expand-home-dir": "0.0.3"
   },
   "devDependencies": {
     "electron-rebuild": "^1.5.7"

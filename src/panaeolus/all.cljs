@@ -4,6 +4,7 @@
    panaeolus.fx
    panaeolus.algo.control
    panaeolus.instruments.tr808
+   panaeolus.instruments.sampler
    panaeolus.instruments.synths
    panaeolus.instruments.oscil-bank
    [panaeolus.macros :refer [pat demo seq forever]]))
@@ -15,6 +16,7 @@
   (panaeolus.macros/pull-symbols 'panaeolus.algo.control)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.tr808)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.oscil-bank)
+  (panaeolus.macros/pull-symbols 'panaeolus.instruments.sampler)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.synths)
   (panaeolus.macros/pull-macros  'panaeolus.all))
 

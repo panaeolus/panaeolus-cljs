@@ -73,6 +73,11 @@
         dur (take len (cycle dur))
         dur (remove #(or (zero? %)
                          (neg? %)) dur)
+        dur (if-let [p3 (:p3 env)]
+              (if number?
+                (->> (cycle [p3]) (take (count dur)) vec)
+                (->> (cycle p3) (take (count dur)) vec))
+              dur)
         dur (if-let [xtratim (:xtratim env)]
               (map #(* % xtratim) dur)
               dur)
