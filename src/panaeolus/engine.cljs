@@ -36,7 +36,7 @@
 
 (def metro-channel (chan (async/sliding-buffer 1)))
 
-(def poll-channel (chan (async/sliding-buffer 2048)))
+(def poll-channel (chan (async/sliding-buffer 1)))
 
 (def pattern-registry (atom {:forever #{}}))
 
@@ -47,7 +47,7 @@
 ;; (.GetKsmps csound Csound)
 ;; (.-beat Abletonlink)
 ;;(.stopUpdate Abletonlink)
-(.startUpdate Abletonlink 10
+(.startUpdate Abletonlink 1
               (fn [beat phase bpm]
                 ;; (prn beat)
                 (go (>! metro-channel beat))))

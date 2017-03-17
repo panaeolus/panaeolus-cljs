@@ -93,7 +93,7 @@
                                    (min instr-count
                                         (nth instr-indicies (mod indx (count instr-indicies)))))
                      instr' (nth instr instr-index) 
-                     env' (merge env (nth instr' 2))]
+                     env' (merge (nth instr' 2) env)]
                  (loop [param-keys (keys (second instr'))
                         params []]
                    (if (empty? param-keys)

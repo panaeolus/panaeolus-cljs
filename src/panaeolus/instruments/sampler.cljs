@@ -66,6 +66,7 @@
       (get bnk (mod (- freq midi-min) (count bnk))))))
 
 (defn sampler-fn [env]
+  ;; (prn env)
   (if-let [bank (:bank env)]
     (case bank
       ("xx" :xx) (freq-to-sample-num (or (:midi env) (:freq env))

@@ -103,8 +103,9 @@
                        (list form env))]
         (recur threaded (next forms)))        
       `(let [instr# ~instr
-             env# ~env 
-             ast# (p/ast-input-messages-builder env# instr#)]
+             ;; a# (prn ~env)
+             ;; env# ~env 
+             ast# (p/ast-input-messages-builder ~env instr#)]
          (pattern-loop-queue (merge (nth instr# 2)
                                     ast# {:pattern-name ~(str pattern-name)
                                           :recompile-fn (nth instr# 3)}))))))
