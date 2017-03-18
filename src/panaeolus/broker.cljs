@@ -86,8 +86,10 @@
                 stop? false
                 last-fx (:fx env)]
         (let [{:keys [pause kill stop? dur input-messages meter fx]
-               :or {input-messages input-messages meter meter stop? stop?
-                    fx last-fx}} new-user-data
+               ;; :or {input-messages input-messages meter meter stop? stop?
+               ;;      fx last-fx}
+               }
+              new-user-data
               [queue-buffer mod-div-buffer] (if dur
                                               [(create-event-queue dur input-messages)
                                                (calc-mod-div meter dur)]
@@ -104,12 +106,12 @@
                                        last-tick
                                        mod-div (first next-event))
                                       engine-poll-channel]))
-                ;; (println "Reynir að skjóta")
+                ;; (println (:pattern-name env) " Reynir að skjóta")
                 (when (<! engine-poll-channel)
                   ;; (go (.ReadScore csound Csound (second next-event)))
                   ;; (.ScoreEvent csound Csound (second next-event)) 
                   (go (.InputMessage csound Csound (second next-event)))
-                  ;; (println "BUINN AÐ SKILA!")
+                  ;; (println (:pattern-name env) " BUINN AÐ SKILA!")
                   (recur (inc index)
                          (inc a-index)
                          mod-div

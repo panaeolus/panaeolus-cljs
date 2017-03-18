@@ -30,11 +30,12 @@
    :p4 {:amp -12}})
 
 
-(comment   
+(comment
+  (demo (low_conga :amp 0))
   (demo (mid_conga :amp 0))
   (demo (high_conga :amp 0))
   (demo (maraca :amp 0))
-  (demo (clap :amp 0))
+  (demo (clap :amp 0)) 
   )
 
 

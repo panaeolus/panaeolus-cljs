@@ -20,8 +20,8 @@
 
 (defn- insert-zak-and-fx [instr & fx]
   (let [[aL aR] (determine-outs instr)
-        zak-system (str "zawm " aL ",0\n"
-                        "zawm " aR ",1\n")
+        zak-system (str "chnmix " aL ",\"OutL\" \n"
+                        "chnmix " aR ",\"OutR\" \n")
         fx (if-not (empty? fx)
              (if (fn? (first fx))
                ((first fx) aL aR)
@@ -67,10 +67,11 @@
         dur (if-let [d (:dur env)]
               (if (vector? d) d [d])
               ;; Should not be possible to reach this case.
-              [1]) 
-        len (let [s (or (:len env) (count dur))]
-              (if (zero? s) (* 4 (:meter env)) s))
-        dur (take len (cycle dur))
+              [1])
+        len (or (:len env) (count dur))
+        ;; len (let [s (or (:len env) (count dur))]
+        ;;       (if (zero? s) (* 4 (:meter env)) s))
+        ;; dur (take len (cycle dur))
         dur (remove #(or (zero? %)
                          (neg? %)) dur)
         dur (if-let [p3 (:p3 env)]
@@ -109,5 +110,4 @@
                         (rest param-keys)
                         (into params [param-name value])))))))
         (assoc env :input-messages input-messages)))))
-
 

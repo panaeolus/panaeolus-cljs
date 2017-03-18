@@ -11,18 +11,18 @@
   nchnls=2\n
   0dbfs=1\n
   sr=44100\n
-  ksmps=32\n
+  ksmps=16\n
   " )
 
 (def ^:private orc-init-tables
   (str
-   (fs/slurp "src/panaeolus/csound/tables/tables.orc") "\n" 
+   (fs/slurp "src/panaeolus/csound/tables/tables.orc") "\n"
    (fs/slurp "src/panaeolus/csound/tables/oscil_bank.orc")))
 
 (def ^:private orc-init-instr-1
   "
   ;;alwayson 1
-  zakinit 4, 1 
+  ;; zakinit 4, 1 
   instr 1
   ;; setksmps 1
   endin
@@ -39,8 +39,8 @@
   "
   alwayson 10000
   instr 10000
-  aMasterLeft zar 0
-  aMasterRight zar 1
+  aMasterLeft chnget \"OutL\"
+  aMasterRight chnget \"OutR\"
   outs aMasterLeft,\\ 
        aMasterRight
   ;;generating a different filename each time csound renders
@@ -55,7 +55,8 @@
   Ssec     strsub    Stim, 17, 19
   Sfilnam  sprintf  \"/home/hlolli/Music/%s_%s_%02d_%s_%s_%s.wav\", Syear, Smonth, iday, Shor,Smin, Ssec
   ;;  fout Sfilnam, 4, aMasterLeft, aMasterRight
-  zacl 0,4
+  chnclear \"OutL\"
+  chnclear \"OutR\" 
   endin
   ")
 

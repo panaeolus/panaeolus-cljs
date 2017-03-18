@@ -7,7 +7,6 @@
             [panaeolus.freq :refer [midi->freq freq->midi]]
             [panaeolus.fx :refer [freeverb lofi]]))
 
-
 (def expand-home-dir (js/require "expand-home-dir"))
 
 (def sample-directory (expand-home-dir "~/.samples/"))
@@ -92,5 +91,6 @@
 
 
 ;; (demo (sampler :speed 1 :amp -12 :bank "rash" :freq 1))
+
 
 

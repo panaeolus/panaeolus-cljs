@@ -7,7 +7,6 @@
             [panaeolus.orchestra-parser :as p]
             [panaeolus.broker :refer [pattern-loop-queue]]))
 
-;; (ns panaeolus.macros)
 
 (defmacro pull-symbols [from-namespace]
   `(let [into-namespace# (symbol (lumo.repl/get-current-ns))
@@ -32,8 +31,9 @@
                                      :use-macros] new-macros#)
      nil))
 
-;; Lata þennan returne-a líka fx
-(defmacro definstrument [instr-name csound-string p-fields]
+
+
+(defmacro definstrument [instr-name csound-string p-fields] 
   `(let [keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
                             (->> ~p-fields
                                  vals
@@ -94,16 +94,15 @@
            (.InputMessage csound Csound (let [f# ((first instr#) :dur (str "-" dur#) :p1 p1#)]
                                           f#)))))))
 
-(defmacro pat [pattern-name instr & forms] 
+(defmacro pat [pattern-name instr & forms]
   (loop [env {}, forms forms]
     (if forms
       (let [form (first forms)
             threaded (if (seq? form)
                        (with-meta `(~(first form) ~env ~@(next form)) (meta form))
                        (list form env))]
-        (recur threaded (next forms)))        
+        (recur threaded (next forms)))
       `(let [instr# ~instr
-             ;; a# (prn ~env)
              ;; env# ~env 
              ast# (p/ast-input-messages-builder ~env instr#)]
          (pattern-loop-queue (merge (nth instr# 2)
@@ -131,25 +130,24 @@
                  (if rest?
                    (conj dur `(* -1 ~grid))
                    (conj dur grid))))
-        (if `(contains? ~env :bank)
-          `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
-          `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true))))))
+        (do (prn "SEQ")
+            (if `(contains? ~env :bank)
+              `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
+              `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true)))))))
 
 
 
 
 
 (comment
-  (panaeolus.macros/pat-> ::a (group (panaeolus.instruments.tr808/low_conga :amp -10)
-                                     (panaeolus.instruments.tr808/mid_conga :amp -10)
-                                     (panaeolus.instruments.tr808/high_conga :amp -10))
-                          ;; (fn [env] {}) 
-                          (panaeolus.macros/seq [0 _ 1 _ 0 _ 2 _ 1])
-                          ;; (assoc :dur [1 1 0.5 -0.25 -0.25])
-                          
-                          
-                          (assoc :kill true)
-                          )
+  (panaeolus.macros/pat ::a (panaeolus.instruments.tr808/low_conga :amp -10)
+                        ;; (fn [env] {}) 
+                        (panaeolus.macros/seq [0 _ 1 _ 0 _ 2 _ 1])
+                        ;; (assoc :dur [1 1 0.5 -0.25 -0.25])
+                        
+                        
+                        ;; (assoc :kill true)
+                        )
 
   (panaeolus.macros/pat-> ::a (panaeolus.instruments.tr808/low_conga :amp -10)
                           (assoc :dur [1 1 0.5 -0.25 -0.25])

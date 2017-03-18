@@ -2,7 +2,8 @@
   (:require
    [cljs.core.async :refer [>!]]
    [panaeolus.engine :refer [bpm! pattern-registry]])
-  (:require-macros [cljs.core.async.macros :refer [go]]))
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:import [cljs.core.async.impl.channels]))
 
 (defn kill [env]
   (assoc env :kill true))
@@ -10,15 +11,19 @@
 (defn killall []
   (go (loop [c (vals @pattern-registry)]
         (if (empty? c)
-          (reset! pattern-registry {})
-          (do (>! (first c) {:kill true})
+          (reset! pattern-registry (select-keys @pattern-registry :forever))
+          (do (when-not (set? (first c))
+                (>! (first c) {:kill true}))
               (recur (rest c)))))))
 
 (defn stop [env]
   (assoc env :stop? true))
 
-(defn len [env length]
-  (assoc env :len length))
+(defn len [env length] 
+  (assoc env :len length
+         :dur (let [d (:dur env)]
+                (if number? d) d
+                (vec (take length (cycle d))))))
 
 (defn meter [env meter]
   (assoc env :meter meter))

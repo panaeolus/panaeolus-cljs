@@ -33,7 +33,7 @@
    :p5 {:freq 500}})
 
 
-(demo (asfm  :freq 100 :cutoff 1200 :amp 0 :mod 2.9 :fx [(lofi :bits 4) (freeverb :sr 9000)] :index 2))
+;; (demo (asfm  :freq 100 :cutoff 1200 :amp 0 :mod 2.9 :fx [(lofi :bits 4) (freeverb :sr 9000)] :index 2))
 
-(demo (sweet :freq 101 :amp -20 :fx (freeverb :sr 90000)))
+;; (demo (sweet :freq 101 :amp -20 :fx (freeverb :sr 90000)))
 

@@ -36,7 +36,7 @@
 
 (def metro-channel (chan (async/sliding-buffer 1)))
 
-(def poll-channel (chan (async/sliding-buffer 1)))
+(def poll-channel (chan (async/sliding-buffer 1024)))
 
 (def pattern-registry (atom {:forever #{}}))
 
@@ -44,43 +44,55 @@
 ;; METRONOME CLOCK CONTROLLER ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def priority-queue (new PriorityQueue))
+
 ;; (.GetKsmps csound Csound)
 ;; (.-beat Abletonlink)
 ;;(.stopUpdate Abletonlink)
 (.startUpdate Abletonlink 1
               (fn [beat phase bpm]
+                (go (loop [] (when-let [poll (async/poll! poll-channel)]
+                               (.enqueue priority-queue (first poll) (second poll))
+                               (recur)))
+                    #_(loop [] (when (>= beat (.peekKey priority-queue))
+                                 (put! (.dequeue priority-queue) true)
+                                 (recur)))
+                    (while (>= beat (.peekKey priority-queue))
+                      (let [dequeued-chan (.dequeue priority-queue)]
+                        (put! dequeued-chan true))))
                 ;; (prn beat)
-                (go (>! metro-channel beat))))
+                ;; (go (>! metro-channel beat))
+                ))
 
 
 (defn bpm! [bpm]
   (set! (.-bpm Abletonlink) bpm))
 
 
-(def main-loop
-  (let [priority-queue (new PriorityQueue)]
-    (go-loop [new-events #queue []]
-      (let [new-events (if-not (empty? new-events)
-                         (do 
-                           (.enqueue priority-queue
-                                     (first (peek new-events))
-                                     (second (peek new-events)))
-                           (pop new-events))
-                         new-events)]
-        (when-let [time (<! metro-channel)] 
-          #_(prn (.getKeys priority-queue)
-                 (.getValues priority-queue))
-          (if (.isEmpty priority-queue)
-            (recur (if-let [poll (async/poll! poll-channel)]
-                     (conj new-events poll) new-events))
-            (do
-              ;;(prn "time: " time ">=" (.peekKey priority-queue))
-              (while (>= time (.peekKey priority-queue))
-                (let [dequeued-chan (.dequeue priority-queue)]
-                  (go (>! dequeued-chan true))))
+#_(def main-loop
+    (let [priority-queue (new PriorityQueue)]
+      (go-loop [new-events #queue []]
+        (let [new-events (if-not (empty? new-events)
+                           (do 
+                             (.enqueue priority-queue
+                                       (first (peek new-events))
+                                       (second (peek new-events)))
+                             (pop new-events))
+                           new-events)]
+          (when-let [time (<! metro-channel)] 
+            #_(prn (.getKeys priority-queue)
+                   (.getValues priority-queue))
+            (if (.isEmpty priority-queue)
               (recur (if-let [poll (async/poll! poll-channel)]
-                       (conj new-events poll)
-                       new-events)))))))))
+                       (conj new-events poll) new-events))
+              (do
+                ;;(prn "time: " time ">=" (.peekKey priority-queue))
+                (while (>= time (.peekKey priority-queue))
+                  (let [dequeued-chan (.dequeue priority-queue)]
+                    (go (>! dequeued-chan true))))
+                (recur (if-let [poll (async/poll! poll-channel)]
+                         (conj new-events poll)
+                         new-events)))))))))
 
 (comment 
   (go (js/console.log (<! metro-channel)))
