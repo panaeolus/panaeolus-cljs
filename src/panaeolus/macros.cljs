@@ -118,15 +118,18 @@
    becomes a rest. Every tick in a sequence
    is equal in time. Numbers represent instrument
    group index or sample bank midi."
-  [env v]
+  [env v & grid+len]
   (if (= cljs.core/List (type v)) nil
       #_(if `(contains? ~env :bank)
           `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
           `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true))
-      (let [grid `(/ 1 (or (:grid ~env) 1))] 
+      (let [[grid len] grid+len
+            grid `(/ 1 (or (:grid ~env) ~grid 1))
+            len `(or (:len ~env) ~len 16)]
         (loop [v v
                indx []
-               dur []]
+               dur []
+               added-len 0]
           (if-not (empty? v)
             (let [next-symbol (first v)
                   [next-symbol extra] (if-not (symbol? next-symbol)
@@ -162,14 +165,20 @@
                          (into (subvec dur 0 (dec (count dur)))
                                (repeat key-is-numeric?
                                        `(/ (last ~dur) ~key-is-numeric?)))
-                         (conj dur grid)))))
+                         (conj dur grid)))
+                     (if-not (nil? extra)
+                       (+ added-len (max 0 (dec (goog.string.toNumber extra))))
+                       (if key-is-numeric?
+                         (+ added-len (max 0 (dec key-is-numeric?)))
+                         added-len))))
             (if `(contains? ~env :bank)
-              `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
-              `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true)))))))
+              `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true :len (+ ~added-len ~len))
+              `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true :len (+ ~added-len ~len))))))))
 
 ;; (panaeolus.macros$macros/seq {} (vec (doall (range 0 10))) true)
 
-;; (panaeolus.macros$macros/seq {:grid 4} [y:4 _])
+
+;; (panaeolus.macros$macros/seq {:grid 4 :len 16} [67 67 67 67:4] 16)
 
 (comment
   (panaeolus.macros/pat ::a (panaeolus.instruments.tr808/low_conga :amp -10)

@@ -16,10 +16,11 @@
                 (if (< 0 meter) meter 0) 0)
         bar-length meter
         summed-durs (apply + (map Math/abs durations))]
-    (if (< 0 meter)
-      (* bar-length
-         (inc (quot (dec summed-durs) bar-length)))
-      summed-durs)))
+    (* 10000
+       (if (< 0 meter)
+         (* bar-length
+            (inc (quot (dec summed-durs) bar-length)))
+         summed-durs))))
 
 (defn- create-event-queue [durations input-messages] 
   (let [input-messages (if (string? input-messages)
@@ -58,7 +59,8 @@
                                          (first input-messages))]))))))))))
 
 (defn- calculate-timestamp [current-time mod-div beat]
-  (let [current-beat (max (mod current-time mod-div) 0)
+  (let [beat (* beat 10000)
+        current-beat (max (mod current-time mod-div) 0)
         delta (- beat current-beat)]
     (if (neg? delta)
       (+ beat current-time (- mod-div current-beat))
@@ -82,7 +84,7 @@
                 queue initial-queue
                 queue-buffer initial-queue
                 new-user-data nil
-                last-tick (.-beat Abletonlink)
+                last-tick  (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
                 stop? false
                 last-fx (:fx env)]
         (let [{:keys [pause kill stop? dur input-messages meter fx]
@@ -122,7 +124,7 @@
                          (pop queue)
                          queue-buffer
                          (async/poll! user-input-channel)
-                         (.-beat Abletonlink)
+                         (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
                          stop?
                          fx)))
               (recur 0
@@ -135,7 +137,7 @@
                      (if stop?
                        (<! user-input-channel)
                        (async/poll! user-input-channel))
-                     (.-beat Abletonlink)
+                     (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
                      false
                      fx))))))))
 

@@ -20,15 +20,15 @@
       (def Csound (.Create csound)))
   (do
     (.InputMessage csound Csound "e")
-    (<! (timeout 10))
+    ;; (<! (timeout 10))
     (.Reset csound Csound)
     (.Cleanup csound Csound)))
 
 (.SetOption csound Csound "-odac")
-(.SetOption csound Csound "-+rtaudio=alsa")
+;; (.SetOption csound Csound "-+rtaudio=alsa")
 (.CompileOrc csound Csound orc-init)
 (.Start csound Csound)
-(.PerformAsync csound Csound (fn [] (.Stop csound Csound)))
+;; (.PerformAsync csound Csound (fn [] (.Stop csound Csound)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GLOBAL CHANNELS AND ATOMS ;;
@@ -49,24 +49,44 @@
 ;; (.GetKsmps csound Csound)
 ;; (.-beat Abletonlink)
 ;;(.stopUpdate Abletonlink)
-(.startUpdate Abletonlink 1
-              (fn [beat phase bpm]
-                (go (loop [] (when-let [poll (async/poll! poll-channel)]
-                               (.enqueue priority-queue (first poll) (second poll))
-                               (recur)))
-                    #_(loop [] (when (>= beat (.peekKey priority-queue))
-                                 (put! (.dequeue priority-queue) true)
+#_(.startUpdate Abletonlink 1
+                (fn [beat phase bpm]
+                  (go (loop [] (when-let [poll (async/poll! poll-channel)]
+                                 (.enqueue priority-queue (first poll) (second poll))
                                  (recur)))
-                    (while (>= beat (.peekKey priority-queue))
-                      (let [dequeued-chan (.dequeue priority-queue)]
-                        (put! dequeued-chan true))))
-                ;; (prn beat)
-                ;; (go (>! metro-channel beat))
-                ))
+                      #_(loop [] (when (>= beat (.peekKey priority-queue))
+                                   (put! (.dequeue priority-queue) true)
+                                   (recur)))
+                      (while (>= beat (.peekKey priority-queue))
+                        (let [dequeued-chan (.dequeue priority-queue)]
+                          (put! dequeued-chan true))))
+                  ;; (prn beat)
+                  ;; (go (>! metro-channel beat))
+                  ))
 
+(.PerformKsmpsAsync csound Csound
+                    (fn []
+                      (let [t (.GetCurrentTimeSamples csound Csound)]
+                        (go (loop [] (when-let [poll (async/poll! poll-channel)]
+                                       (.enqueue priority-queue (first poll) (second poll))
+                                       (recur)))
+                            #_(loop [] (when (>= beat (.peekKey priority-queue))
+                                         (put! (.dequeue priority-queue) true)
+                                         (recur)))
+                            (while (>= t (.peekKey priority-queue))
+                              (let [dequeued-chan (.dequeue priority-queue)]
+                                (put! dequeued-chan true)))))
+                      ;; (prn beat)
+                      ;; (go (>! metro-channel beat))
+                      ) 
+                    (fn [] (.Stop csound Csound)))
 
-(defn bpm! [bpm]
-  (set! (.-bpm Abletonlink) bpm))
+;; (def *SR* (.GetKsmps csound Csound))
+
+(def bpm! nil)
+
+#_(defn bpm! [bpm]
+    (set! (.-bpm Abletonlink) bpm))
 
 
 #_(def main-loop
@@ -98,7 +118,7 @@
   (go (js/console.log (<! metro-channel)))
 
   (go (let [event-c (chan)]
-        (>! poll-channel [1 300 event-c])
+        (>! poll-channel [3000 event-c])
         (when (<! event-c)
           (.InputMessage csound Csound "i 2 0 1"))))
 

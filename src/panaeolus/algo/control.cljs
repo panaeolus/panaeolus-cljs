@@ -1,7 +1,7 @@
 (ns panaeolus.algo.control
   (:require
    [cljs.core.async :refer [>!]]
-   [panaeolus.engine :refer [bpm! pattern-registry]])
+   [panaeolus.engine :refer [pattern-registry]])
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:import [cljs.core.async.impl.channels]))
 
@@ -11,7 +11,7 @@
 (defn killall []
   (go (loop [c (vals (dissoc @pattern-registry :forever))]
         (if (empty? c)
-          (reset! pattern-registry (select-keys @pattern-registry :forever))
+          (reset! pattern-registry (select-keys @pattern-registry [:forever]))
           (do (>! (first c) {:kill true})
               (recur (rest c)))))))
 
@@ -23,6 +23,7 @@
          :dur (let [d (:dur env)]
                 (if number? d) d
                 (vec (take length (cycle d))))))
+
 
 (defn meter [env meter]
   (assoc env :meter meter))
