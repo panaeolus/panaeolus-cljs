@@ -16,6 +16,15 @@
     (format"\n%s, %s LoFiS  %s, %s, %f, %f\n" aL aR aL aR bits fold)))
 
 
+(defn flanger [& {:keys [rate depth delay fback wet shape]
+                  :or {rate 5.15 depth 0.001
+                       delay 0.001 fback 0
+                       wet 1 shape 1}}]
+  (fn [aL aR]
+    (format "\n %s, %s Flanger_stereo %s, %s, %s, %s, %s, %s, %s, %s \n"
+            aL aR aL aR rate depth delay fback wet shape)))
+
+
 (comment
   (freeverb :room 1)
 

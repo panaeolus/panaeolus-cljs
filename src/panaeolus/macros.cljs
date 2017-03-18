@@ -3,9 +3,13 @@
             [macchiato.fs :as fs]
             [cljs.env :as env]
             [cljs.js :as cljs]
+            [goog.string :as gstring]
+            [clojure.string :as string]
             [panaeolus.engine :refer [csound Csound pattern-registry]]
             [panaeolus.orchestra-parser :as p]
-            [panaeolus.broker :refer [pattern-loop-queue]]))
+            [panaeolus.broker :refer [pattern-loop-queue]])
+  (:import [goog.string.isNumeric]
+           [goog.string.toNumber]))
 
 
 (defmacro pull-symbols [from-namespace]
@@ -115,29 +119,57 @@
    is equal in time. Numbers represent instrument
    group index or sample bank midi."
   [env v]
-  (let [grid `(/ 1 (or (:grid ~env) 1))]
-    (loop [v v
-           indx []
-           dur []]
-      (if-not (empty? v)
-        (let [rest? (= '_ (first v))]
-          (recur (rest v)
-                 (if rest?
-                   indx
-                   (if (integer? (first v))
-                     (conj indx (Math/abs (first v)))
-                     (conj indx 0)))
-                 (if rest?
-                   (conj dur `(* -1 ~grid))
-                   (conj dur grid))))
-        (do (prn "SEQ")
+  (if (= cljs.core/List (type v)) nil
+      #_(if `(contains? ~env :bank)
+          `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
+          `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true))
+      (let [grid `(/ 1 (or (:grid ~env) 1))] 
+        (loop [v v
+               indx []
+               dur []]
+          (if-not (empty? v)
+            (let [next-symbol (first v)
+                  [next-symbol extra] (if-not (symbol? next-symbol)
+                                        [next-symbol nil]
+                                        (let [nxs (str next-symbol)]
+                                          (if (re-find #":" nxs)
+                                            (string/split nxs ":")
+                                            [next-symbol nil])))
+                  rest? (or (= '_ next-symbol) (and (number? next-symbol)
+                                                    (neg? next-symbol)))
+                  key? (keyword? next-symbol)
+                  key-is-numeric? (if-not
+                                      key? nil
+                                      (if (goog.string.isNumeric (name next-symbol))
+                                        (goog.string.toNumber (name next-symbol))
+                                        false))]
+              (recur (if extra
+                       (into [(keyword extra)] (rest v))
+                       (rest v))
+                     (cond 
+                       rest? indx
+                       key? (if key-is-numeric?
+                              (into (subvec indx 0 (dec (count indx)))
+                                    (repeat key-is-numeric? (last indx)))
+                              ;; ADD SCALE LOOKUP ETC HERE
+                              (conj indx next-symbol))
+                       :else (if (integer? (first v))
+                               (conj indx (Math/abs (first v)))
+                               (conj indx 0)))
+                     (if rest?
+                       (conj dur `(* -1 ~grid))
+                       (if key-is-numeric?
+                         (into (subvec dur 0 (dec (count dur)))
+                               (repeat key-is-numeric?
+                                       `(/ (last ~dur) ~key-is-numeric?)))
+                         (conj dur grid)))))
             (if `(contains? ~env :bank)
               `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
               `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true)))))))
 
+;; (panaeolus.macros$macros/seq {} (vec (doall (range 0 10))) true)
 
-
-
+;; (panaeolus.macros$macros/seq {:grid 4} [y:4 _])
 
 (comment
   (panaeolus.macros/pat ::a (panaeolus.instruments.tr808/low_conga :amp -10)

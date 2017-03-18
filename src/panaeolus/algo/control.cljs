@@ -9,11 +9,10 @@
   (assoc env :kill true))
 
 (defn killall []
-  (go (loop [c (vals @pattern-registry)]
+  (go (loop [c (vals (dissoc @pattern-registry :forever))]
         (if (empty? c)
           (reset! pattern-registry (select-keys @pattern-registry :forever))
-          (do (when-not (set? (first c))
-                (>! (first c) {:kill true}))
+          (do (>! (first c) {:kill true})
               (recur (rest c)))))))
 
 (defn stop [env]
@@ -34,7 +33,7 @@
    1=wholenote 2=halfnote 4=quavier 8=8th etc.."
   [env grid]
   (if (:seq-parsed? env)
-    (assoc env :dur (mapv #(/ % (int (/ grid 4))) (or (:dur env) [])))
+    (assoc env :dur (mapv #(int (/ % (/ grid 4))) (or (:dur env) [])))
     (assoc env :grid (max (int (/ grid 4)) 1))))
 
 (defn group

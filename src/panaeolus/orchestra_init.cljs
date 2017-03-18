@@ -11,7 +11,7 @@
   nchnls=2\n
   0dbfs=1\n
   sr=44100\n
-  ksmps=16\n
+  ksmps=64\n
   " )
 
 (def ^:private orc-init-tables
@@ -32,8 +32,9 @@
   (fs/slurp "src/panaeolus/csound/udo/Partial.udo"))
 
 (def ^:private orc-init-fx
-  ;; (fs/slurp "src/panaeolus/csound/fx/reverb.orc")
-  (fs/slurp "src/panaeolus/csound/fx/lofi.udo"))
+  (str
+   (fs/slurp "src/panaeolus/csound/fx/flanger.udo")
+   (fs/slurp "src/panaeolus/csound/fx/lofi.udo")))
 
 (def ^:private orc-init-bottom
   "

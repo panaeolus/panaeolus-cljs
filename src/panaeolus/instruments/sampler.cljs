@@ -68,6 +68,8 @@
   ;; (prn env)
   (if-let [bank (:bank env)]
     (case bank
+      ("jb" :jb) (freq-to-sample-num (or (:midi env) (:freq env))
+                                     0 (get all-samples :jb))
       ("xx" :xx) (freq-to-sample-num (or (:midi env) (:freq env))
                                      12 (get all-samples :xx))
       ("jx" :jx) (freq-to-sample-num (or (:midi env) (:freq env))
@@ -77,11 +79,19 @@
       ("pulse" :pulse) (freq-to-sample-num (or (:midi env) (:freq env))
                                            36 (get all-samples :pulse))
       ("rash" :rash) (freq-to-sample-num (or (:midi env) (:freq env))
-                                         36 (get all-samples :rash))
+                                         36 (get all-samples :rash)) 
       (throw (js/Error. (str "The sample bank: " bank " does not exist"))))
     (max 1000 (:sample env))))
 
 (definstrument "sampler"
+  (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:speed 1}
+   :p6 {:freq 1000 :fn panaeolus.instruments.sampler/sampler-fn}
+   :p7 {:loop 0}})
+
+(definstrument "sampler2"
   (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")
   {:p3 {:dur 1}
    :p4 {:amp -12}

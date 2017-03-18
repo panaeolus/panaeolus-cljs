@@ -94,8 +94,10 @@
                                               [(create-event-queue dur input-messages)
                                                (calc-mod-div meter dur)]
                                               [queue-buffer mod-div-buffer])
-              _ (when (not= last-fx fx)
+              _ (when (and (not= last-fx fx)
+                           (fn? (:recompile-fn new-user-data)))
                   (println "recompileing fx-changes...")
+                  ;; (prn new-user-data)
                   ((:recompile-fn new-user-data)))
               new-user-data nil]
           (if kill
