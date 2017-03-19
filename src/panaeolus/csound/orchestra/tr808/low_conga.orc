@@ -8,4 +8,8 @@ instr 1
   asig = asig*iamp
   aL,aR	pan2 asig,0.5 - linrand:i(1)
   outs aL,aR
+  ; gitime3 = gitime2
+  ; gitime2 = gitime1
+  ; gitime1 timek
+  ; printf_i "Inaccuracy %f s", 1,(gitime1 - gitime2) - (gitime2 - gitime3)
 endin

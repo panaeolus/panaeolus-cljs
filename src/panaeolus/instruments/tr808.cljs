@@ -1,8 +1,9 @@
 (ns panaeolus.instruments.tr808
   (:require [macchiato.fs :as fs]
-            [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.macros :refer [definstrument demo forever]]
-            [panaeolus.fx :refer [freeverb lofi]]))
+            [panaeolus.engine :refer [Csound csound]] 
+            [panaeolus.fx :refer [freeverb lofi]]
+            panaeolus.orchestra-parser)
+  (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
 (def low_conga_slurp
   (fs/slurp "src/panaeolus/csound/orchestra/tr808/low_conga.orc"))

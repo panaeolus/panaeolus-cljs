@@ -1,8 +1,8 @@
 (ns panaeolus.instruments.oscil-bank
   (:require [macchiato.fs :as fs]
             [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.macros :refer [definstrument demo]]))
+            [panaeolus.engine :refer [Csound csound]])
+  (:require-macros [panaeolus.macros :refer [definstrument demo]]))
 
 (definstrument "bass_trombone"
   (fs/slurp "src/panaeolus/csound/orchestra/oscbnk/bass_trombone.orc")

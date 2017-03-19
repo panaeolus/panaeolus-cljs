@@ -1,8 +1,8 @@
 (ns panaeolus.instruments.plucked
   (:require [macchiato.fs :as fs]
             [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.macros :refer [definstrument demo]]))
+            [panaeolus.engine :refer [Csound csound]])
+  (:require-macros [panaeolus.macros :refer [definstrument demo]]))
 
 (definstrument "pluck_bass"
   (fs/slurp "src/panaeolus/csound/orchestra/pluck/bass.orc")

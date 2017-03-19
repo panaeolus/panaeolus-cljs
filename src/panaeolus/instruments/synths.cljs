@@ -1,9 +1,9 @@
 (ns panaeolus.instruments.synths
   (:require [macchiato.fs :as fs]
             [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.macros :refer [definstrument demo forever]]
-            [panaeolus.fx :refer [freeverb lofi flanger]]))
+            [panaeolus.engine :refer [Csound csound]] 
+            [panaeolus.fx :refer [freeverb lofi flanger]])
+  (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
 (definstrument "nuclear"
   (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc")

@@ -1,15 +1,11 @@
 (ns panaeolus.broker
   (:require
-   [cljs.core.async
-    :refer [<! >! put! chan timeout] :as async]
-   [panaeolus.engine
-    :refer [poll-channel csound Csound
-            pattern-registry bpm!
-            ;;Abletonlink ;;TICKS-PER-SECOND
-            ]]
-   [goog.string :as gstring])
-  (:require-macros [cljs.core.async.macros
-                    :refer [go go-loop]]))
+   [cljs.core.async :refer [<! >! put! chan timeout] :as async]
+   [panaeolus.engine :refer [poll-channel csound Csound
+                             pattern-registry bpm!]]
+   [goog.string :as gstring]
+   [panaeolus.orchestra-parser :refer [ast-input-messages-builder]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
 (def async (js/require "async"))
 
@@ -72,7 +68,7 @@
 (defn pattern-loop-queue [env]
   (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
     (do ;;(prn "FEEDS!")
-      (go (>! user-input-channel env))
+      (put! user-input-channel env)
       nil
       )
     (let [{:keys [dur pattern-name meter input-messages]} env
@@ -166,14 +162,33 @@
       nil)))
 
 
+(defn pat [pattern-name instr env]
+  (pattern-loop-queue (merge (nth instr 2)
+                             (ast-input-messages-builder env instr)
+                             {:pattern-name (str pattern-name)
+                              :recompile-fn (nth instr 3)})))
+
 (comment 
+
+  (pat :melody1 (panaeolus.instruments.tr808/low_conga)
+       #_(seq [1 1 1 1:2] 2)
+
+       (panaeolus.macros/->  (assoc 
+                              :dur [1 1 1 0.25 0.125 0.125 0.5])
+                             (assoc :kill true)
+                             )
+       )
+
+
   (pattern-loop-queue
-   {:dur [1 1 1 -0.25 0.25 0.5]
-    :pattern-name :abc
-    :input-messages "i 3 0 0.1 -3"
-    :meter 4
-    :kill true
-    })
+   (do (panaeolus.instruments.tr808/low_conga)
+       (-> {:dur [1 1 1 -0.25 0.25 0.5]
+            :pattern-name :abc
+            :input-messages "i 3 0 0.1 -8 100"
+            :meter 4
+            :kill true
+            }
+           (assoc :dur [1 1 1 0.125 0.125 0.25 0.5]))))
 
   (bpm! 361)
   (pattern-loop-queue
@@ -186,11 +201,11 @@
 
   (.ScoreEvent csound Csound "i" #js [2 0 1])
   (.InputMessage csound Csound "i 2 0 1")
-  (dur->event-queue [1 1 1 1] #queue [])
+  (dur->event-queue [1 1 1 1] #queue []))
 
-  (go (let [event-c (chan)]
-        (>! poll-channel [0 300 event-c])
-        (when (<! event-c)
-          (.InputMessage csound Csound "i 2 0 1"))))
-  
-  )
+(go (let [event-c (chan)]
+      (>! poll-channel [0 300 event-c])
+      (when (<! event-c)
+        (.InputMessage csound Csound "i 2 0 1"))))
+
+

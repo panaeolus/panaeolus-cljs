@@ -1,4 +1,4 @@
-(ns panaeolus.macros$macros
+(ns panaeolus.macros
   (:require [lumo.repl :refer [get-current-ns]]
             [macchiato.fs :as fs]
             [cljs.env :as env]
@@ -6,11 +6,9 @@
             [goog.string :as gstring]
             [clojure.string :as string]
             [panaeolus.engine :refer [csound Csound pattern-registry]]
-            [panaeolus.orchestra-parser :as p]
+            panaeolus.orchestra-parser
             [panaeolus.broker :refer [pattern-loop-queue]])
-  (:require-macros [cljs.core.async.macros :refer [go]])
-  (:import [goog.string.isNumeric]
-           [goog.string.toNumber]))
+  (:require-macros [cljs.core.async.macros :refer [go]]))
 
 
 (defmacro pull-symbols [from-namespace]
@@ -47,9 +45,9 @@
          keys-vector# (-> keys-vector# distinct) 
          or-map# (merge {:dur 0.5}
                         (apply merge (vals ~p-fields))) 
-         instr-number# (p/compile-csound-instrument
+         instr-number# (panaeolus.orchestra-parser/compile-csound-instrument
                         ~instr-name ~csound-string)
-         param-lookup-map# (p/fold-hashmap ~p-fields)]
+         param-lookup-map# (panaeolus.orchestra-parser/fold-hashmap ~p-fields)]
      (defn ~(symbol instr-name) 
        [~(symbol "&") {~(symbol "keys") keys-vector#
                        :or or-map#
@@ -59,7 +57,7 @@
           (let [p-count# (count (keys or-map#))
                 final-env# (merge or-map# env# closure-env#)]
             (apply str "i " (or (:p1 final-env#) instr-number#) " 0"
-                   (for [param# (p/generate-p-keywords
+                   (for [param# (panaeolus.orchestra-parser/generate-p-keywords
                                  p-count#)]
                      (if-let [fun# (get-in ~p-fields [param# :fn])]
                        (str " " (fun# final-env#))
@@ -69,7 +67,7 @@
         param-lookup-map#
         (merge or-map# env#)
         ;; recompile-fn
-        (fn [] (p/compile-csound-instrument
+        (fn [] (panaeolus.orchestra-parser/compile-csound-instrument
                 ~instr-name ~csound-string (:fx env#)))
         instr-number#])))
 
@@ -99,84 +97,101 @@
            (.InputMessage csound Csound (let [f# ((first instr#) :dur (str "-" dur#) :p1 p1#)]
                                           f#)))))))
 
-(defmacro pat [pattern-name instr & forms]
-  (loop [env {}, forms forms]
+(defmacro -> [& forms]
+  (loop [x {}, forms forms]
     (if forms
       (let [form (first forms)
             threaded (if (seq? form)
-                       (with-meta `(~(first form) ~env ~@(next form)) (meta form))
-                       (list form env))]
+                       (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                       (list form x))]
         (recur threaded (next forms)))
-      (let [ ;; instr ~instr
-            ;; env# ~env 
-            ;; ast# (p/ast-input-messages-builder ~env instr#)
-            ]
-        `(pattern-loop-queue (merge (nth ~instr 2)
-                                    (p/ast-input-messages-builder ~env ~instr)
-                                    ;; ast#
-                                    {:pattern-name (str ~pattern-name)
-                                     :recompile-fn (nth ~instr 3)}))))))
+      x)))
 
-(defmacro seq
-  "Parses a drum sequence, a _ symbol
+
+#_(panaeolus.macros$macros/thread-pat* {} (seq [1 1 1 1]))
+
+#_`(pattern-loop-queue (merge (nth ~instr 2)
+                              (p/ast-input-messages-builder ~env ~instr)
+                              {:pattern-name (str ~pattern-name)
+                               :recompile-fn (nth ~instr 3)}))
+
+
+#_(defmacro pat2 [pattern-name instr & forms]
+    (loop [env {}, forms forms]
+      (if forms
+        (let [form (first forms)
+              threaded (if (seq? form)
+                         (with-meta `(~(first form) ~env ~@(next form)) (meta form))
+                         (list form env))]
+          (recur threaded (next forms)))
+        env
+        (pattern-loop-queue (merge (nth ~instr 2)
+                                   ;;(p/ast-input-messages-builder ~env ~instr)
+                                   ;; ast#
+                                   {:pattern-name (str ~pattern-name)
+                                    :recompile-fn (nth ~instr 3)})))))
+
+
+#_(defmacro seq
+    "Parses a drum sequence, a _ symbol
    becomes a rest. Every tick in a sequence
    is equal in time. Numbers represent instrument
    group index or sample bank midi."
-  [env v & grid+len]
-  #_(if `(contains? ~env :bank)
-      `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
-      `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true))
-  (let [[grid len] grid+len
-        grid `(/ 1 (or (:grid ~env) ~grid 1))
-        len `(or (:len ~env) ~len 16)]
-    (loop [v v
-           indx []
-           dur []
-           added-len 0]
-      (if-not (empty? v)
-        (let [next-symbol (first v)
-              [next-symbol extra] (if-not (symbol? next-symbol)
-                                    [next-symbol nil]
-                                    (let [nxs (str next-symbol)]
-                                      (if (re-find #":" nxs)
-                                        (string/split nxs ":")
-                                        [next-symbol nil])))
-              rest? (or (= '_ next-symbol) (and (number? next-symbol)
-                                                (neg? next-symbol)))
-              key? (keyword? next-symbol)
-              key-is-numeric? (if-not
-                                  key? nil
-                                  (if (goog.string.isNumeric (name next-symbol))
-                                    (goog.string.toNumber (name next-symbol))
-                                    false))]
-          (recur (if extra
-                   (into [(keyword extra)] (rest v))
-                   (rest v))
-                 (cond 
-                   rest? indx
-                   key? (if key-is-numeric?
-                          (into (subvec indx 0 (dec (count indx)))
-                                (repeat key-is-numeric? (last indx)))
-                          ;; ADD SCALE LOOKUP ETC HERE
-                          (conj indx next-symbol))
-                   :else (if (integer? (first v))
-                           (conj indx (Math/abs (first v)))
-                           (conj indx 0)))
-                 (if rest?
-                   (conj dur `(* -1 ~grid))
-                   (if key-is-numeric?
-                     (into (subvec dur 0 (dec (count dur)))
-                           (repeat key-is-numeric?
-                                   `(/ (last ~dur) ~key-is-numeric?)))
-                     (conj dur grid)))
-                 (if-not (nil? extra)
-                   (+ added-len (max 0 (dec (goog.string.toNumber extra))))
-                   (if key-is-numeric?
-                     (+ added-len (max 0 (dec key-is-numeric?)))
-                     added-len))))
-        (if `(contains? ~env :bank)
-          `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true :len (+ ~added-len ~len))
-          `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true :len (+ ~added-len ~len)))))))
+    [env v & grid+len]
+    #_(if `(contains? ~env :bank)
+        `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
+        `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true))
+    (let [[grid len] grid+len
+          grid `(/ 1 (or (:grid ~env) ~grid 1))
+          len `(or (:len ~env) ~len 16)]
+      (loop [v v
+             indx []
+             dur []
+             added-len 0]
+        (if-not (empty? v)
+          (let [next-symbol (first v)
+                [next-symbol extra] (if-not (symbol? next-symbol)
+                                      [next-symbol nil]
+                                      (let [nxs (str next-symbol)]
+                                        (if (re-find #":" nxs)
+                                          (string/split nxs ":")
+                                          [next-symbol nil])))
+                rest? (or (= '_ next-symbol) (and (number? next-symbol)
+                                                  (neg? next-symbol)))
+                key? (keyword? next-symbol)
+                key-is-numeric? (if-not
+                                    key? nil
+                                    (if (goog.string.isNumeric (name next-symbol))
+                                      (goog.string.toNumber (name next-symbol))
+                                      false))]
+            (recur (if extra
+                     (into [(keyword extra)] (rest v))
+                     (rest v))
+                   (cond 
+                     rest? indx
+                     key? (if key-is-numeric?
+                            (into (subvec indx 0 (dec (count indx)))
+                                  (repeat key-is-numeric? (last indx)))
+                            ;; ADD SCALE LOOKUP ETC HERE
+                            (conj indx next-symbol))
+                     :else (if (integer? (first v))
+                             (conj indx (Math/abs (first v)))
+                             (conj indx 0)))
+                   (if rest?
+                     (conj dur `(* -1 ~grid))
+                     (if key-is-numeric?
+                       (into (subvec dur 0 (dec (count dur)))
+                             (repeat key-is-numeric?
+                                     `(/ (last ~dur) ~key-is-numeric?)))
+                       (conj dur grid)))
+                   (if-not (nil? extra)
+                     (+ added-len (max 0 (dec (goog.string.toNumber extra))))
+                     (if key-is-numeric?
+                       (+ added-len (max 0 (dec key-is-numeric?)))
+                       added-len))))
+          (if `(contains? ~env :bank)
+            `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true :len (+ ~added-len ~len))
+            `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true :len (+ ~added-len ~len)))))))
 
 ;; (panaeolus.macros$macros/seq {} (vec (doall (range 0 10))) true)
 
@@ -184,14 +199,14 @@
 ;; (panaeolus.macros$macros/seq {:grid 4 :len 16} [67 67 67 67:4] 16)
 
 (comment
-  (panaeolus.macros/pat ::a (panaeolus.instruments.tr808/low_conga :amp -10)
-                        ;; (fn [env] {}) 
-                        (panaeolus.macros/seq [0 _ 1 _ 0 _ 2 _ 1])
-                        ;; (assoc :dur [1 1 0.5 -0.25 -0.25])
-                        
-                        
-                        ;; (assoc :kill true)
-                        )
+  (panaeolus.macros/pat2 ::a (panaeolus.instruments.tr808/low_conga :amp -10)
+                         ;; (fn [env] {}) 
+                         (panaeolus.macros$macros/seq [0 -1 1 -1 1])
+                         ;; (assoc :dur [1 1 0.5 -0.25 -0.25])
+                         
+                         
+                         ;; (assoc :kill true)
+                         )
 
   (panaeolus.macros/pat-> ::a (panaeolus.instruments.tr808/low_conga :amp -10)
                           (assoc :dur [1 1 0.5 -0.25 -0.25])

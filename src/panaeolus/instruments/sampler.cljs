@@ -3,9 +3,9 @@
             [clojure.string :as string]
             [panaeolus.algo.control :refer [group]]
             [panaeolus.engine :refer [Csound csound]]
-            [panaeolus.macros :refer [definstrument demo pat seq]]
             [panaeolus.freq :refer [midi->freq freq->midi]]
-            [panaeolus.fx :refer [freeverb lofi]]))
+            [panaeolus.fx :refer [freeverb lofi]])
+  (:require-macros [panaeolus.macros :refer [definstrument demo]]))
 
 (def expand-home-dir (js/require "expand-home-dir"))
 
