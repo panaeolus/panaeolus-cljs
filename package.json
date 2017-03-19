@@ -21,7 +21,11 @@
     "require-rebuild": "latest",
     "lumo-cljs": "latest",
     "abletonlink": "0.0.3",
-    "expand-home-dir": "0.0.3"
+    "expand-home-dir": "0.0.3",
+    "fastpriorityqueue": "0.2.3",
+    "async": "2.1.5",
+    "stratifiedjs": "0.19.0",
+    "memwatch": "latest"
   },
   "devDependencies": {
     "electron-rebuild": "^1.5.7"

@@ -4,8 +4,11 @@
             [panaeolus.macros :refer [definstrument demo forever]]
             [panaeolus.fx :refer [freeverb lofi]]))
 
+(def low_conga_slurp
+  (fs/slurp "src/panaeolus/csound/orchestra/tr808/low_conga.orc"))
+
 (definstrument "low_conga"
-  (fs/slurp "src/panaeolus/csound/orchestra/tr808/low_conga.orc")
+  low_conga_slurp
   {:p3 {:dur 1}
    :p4 {:amp -12}})
 

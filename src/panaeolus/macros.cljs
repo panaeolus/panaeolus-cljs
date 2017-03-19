@@ -8,6 +8,7 @@
             [panaeolus.engine :refer [csound Csound pattern-registry]]
             [panaeolus.orchestra-parser :as p]
             [panaeolus.broker :refer [pattern-loop-queue]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:import [goog.string.isNumeric]
            [goog.string.toNumber]))
 
@@ -106,12 +107,15 @@
                        (with-meta `(~(first form) ~env ~@(next form)) (meta form))
                        (list form env))]
         (recur threaded (next forms)))
-      `(let [instr# ~instr
-             ;; env# ~env 
-             ast# (p/ast-input-messages-builder ~env instr#)]
-         (pattern-loop-queue (merge (nth instr# 2)
-                                    ast# {:pattern-name ~(str pattern-name)
-                                          :recompile-fn (nth instr# 3)}))))))
+      (let [ ;; instr ~instr
+            ;; env# ~env 
+            ;; ast# (p/ast-input-messages-builder ~env instr#)
+            ]
+        `(pattern-loop-queue (merge (nth ~instr 2)
+                                    (p/ast-input-messages-builder ~env ~instr)
+                                    ;; ast#
+                                    {:pattern-name (str ~pattern-name)
+                                     :recompile-fn (nth ~instr 3)}))))))
 
 (defmacro seq
   "Parses a drum sequence, a _ symbol
@@ -119,61 +123,60 @@
    is equal in time. Numbers represent instrument
    group index or sample bank midi."
   [env v & grid+len]
-  (if (= cljs.core/List (type v)) nil
-      #_(if `(contains? ~env :bank)
-          `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
-          `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true))
-      (let [[grid len] grid+len
-            grid `(/ 1 (or (:grid ~env) ~grid 1))
-            len `(or (:len ~env) ~len 16)]
-        (loop [v v
-               indx []
-               dur []
-               added-len 0]
-          (if-not (empty? v)
-            (let [next-symbol (first v)
-                  [next-symbol extra] (if-not (symbol? next-symbol)
-                                        [next-symbol nil]
-                                        (let [nxs (str next-symbol)]
-                                          (if (re-find #":" nxs)
-                                            (string/split nxs ":")
-                                            [next-symbol nil])))
-                  rest? (or (= '_ next-symbol) (and (number? next-symbol)
-                                                    (neg? next-symbol)))
-                  key? (keyword? next-symbol)
-                  key-is-numeric? (if-not
-                                      key? nil
-                                      (if (goog.string.isNumeric (name next-symbol))
-                                        (goog.string.toNumber (name next-symbol))
-                                        false))]
-              (recur (if extra
-                       (into [(keyword extra)] (rest v))
-                       (rest v))
-                     (cond 
-                       rest? indx
-                       key? (if key-is-numeric?
-                              (into (subvec indx 0 (dec (count indx)))
-                                    (repeat key-is-numeric? (last indx)))
-                              ;; ADD SCALE LOOKUP ETC HERE
-                              (conj indx next-symbol))
-                       :else (if (integer? (first v))
-                               (conj indx (Math/abs (first v)))
-                               (conj indx 0)))
-                     (if rest?
-                       (conj dur `(* -1 ~grid))
-                       (if key-is-numeric?
-                         (into (subvec dur 0 (dec (count dur)))
-                               (repeat key-is-numeric?
-                                       `(/ (last ~dur) ~key-is-numeric?)))
-                         (conj dur grid)))
-                     (if-not (nil? extra)
-                       (+ added-len (max 0 (dec (goog.string.toNumber extra))))
-                       (if key-is-numeric?
-                         (+ added-len (max 0 (dec key-is-numeric?)))
-                         added-len))))
-            (if `(contains? ~env :bank)
-              `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true :len (+ ~added-len ~len))
-              `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true :len (+ ~added-len ~len))))))))
+  #_(if `(contains? ~env :bank)
+      `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true)
+      `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true))
+  (let [[grid len] grid+len
+        grid `(/ 1 (or (:grid ~env) ~grid 1))
+        len `(or (:len ~env) ~len 16)]
+    (loop [v v
+           indx []
+           dur []
+           added-len 0]
+      (if-not (empty? v)
+        (let [next-symbol (first v)
+              [next-symbol extra] (if-not (symbol? next-symbol)
+                                    [next-symbol nil]
+                                    (let [nxs (str next-symbol)]
+                                      (if (re-find #":" nxs)
+                                        (string/split nxs ":")
+                                        [next-symbol nil])))
+              rest? (or (= '_ next-symbol) (and (number? next-symbol)
+                                                (neg? next-symbol)))
+              key? (keyword? next-symbol)
+              key-is-numeric? (if-not
+                                  key? nil
+                                  (if (goog.string.isNumeric (name next-symbol))
+                                    (goog.string.toNumber (name next-symbol))
+                                    false))]
+          (recur (if extra
+                   (into [(keyword extra)] (rest v))
+                   (rest v))
+                 (cond 
+                   rest? indx
+                   key? (if key-is-numeric?
+                          (into (subvec indx 0 (dec (count indx)))
+                                (repeat key-is-numeric? (last indx)))
+                          ;; ADD SCALE LOOKUP ETC HERE
+                          (conj indx next-symbol))
+                   :else (if (integer? (first v))
+                           (conj indx (Math/abs (first v)))
+                           (conj indx 0)))
+                 (if rest?
+                   (conj dur `(* -1 ~grid))
+                   (if key-is-numeric?
+                     (into (subvec dur 0 (dec (count dur)))
+                           (repeat key-is-numeric?
+                                   `(/ (last ~dur) ~key-is-numeric?)))
+                     (conj dur grid)))
+                 (if-not (nil? extra)
+                   (+ added-len (max 0 (dec (goog.string.toNumber extra))))
+                   (if key-is-numeric?
+                     (+ added-len (max 0 (dec key-is-numeric?)))
+                     added-len))))
+        (if `(contains? ~env :bank)
+          `(assoc ~env :dur ~dur :freq ~indx :seq-parsed? true :len (+ ~added-len ~len))
+          `(assoc ~env :dur ~dur :instr-indicies ~indx :seq-parsed? true :len (+ ~added-len ~len)))))))
 
 ;; (panaeolus.macros$macros/seq {} (vec (doall (range 0 10))) true)
 

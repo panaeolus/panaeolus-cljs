@@ -11,7 +11,7 @@
   nchnls=2\n
   0dbfs=1\n
   sr=44100\n
-  ksmps=64\n
+  ksmps=1\n
   " )
 
 (def ^:private orc-init-tables
