@@ -59,5 +59,5 @@
                    (if key-is-numeric?
                      (+ added-len (max 0 (dec key-is-numeric?)))
                      added-len))))
-        (assoc env :dur dur :seq-parsed? true :xtralen added-len)))))
+        (assoc env :dur dur :seq-parsed? true :xtralen added-len :freq notenum)))))
 

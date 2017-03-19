@@ -44,60 +44,10 @@
 ;; METRONOME CLOCK CONTROLLER ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (def priority-queue (new PriorityQueue))
-(def FastPriorityQueue (js/require "fastpriorityqueue"))
-(def priority-queue (new FastPriorityQueue (fn [a b] (< (first a) (first b)))))
 
+;; (def FastPriorityQueue (js/require "fastpriorityqueue"))
+;; (def priority-queue (new FastPriorityQueue (fn [a b] (< (first a) (first b)))))
 
-;; (.until async (fn [] (= 1 @a)) (fn [cb] (js/setTimeout (fn [] (cb)) 1000)) (fn [] (prn "já")))
-
-
-;; (.GetKsmps csound Csound)
-;; (.-beat Abletonlink)
-;;(.stopUpdate Abletonlink)
-#_(.startUpdate Abletonlink 1
-                (fn [beat phase bpm]
-                  (go (loop [] (when-let [poll (async/poll! poll-channel)]
-                                 (.enqueue priority-queue (first poll) (second poll))
-                                 (recur)))
-                      #_(loop [] (when (>= beat (.peekKey priority-queue))
-                                   (put! (.dequeue priority-queue) true)
-                                   (recur)))
-                      (while (>= beat (.peekKey priority-queue))
-                        (let [dequeued-chan (.dequeue priority-queue)]
-                          (put! dequeued-chan true))))
-                  ;; (prn beat)
-                  ;; (go (>! metro-channel beat))
-                  ))
-(comment 
-  (.add priority-queue [0 "a"])
-  (.add priority-queue [1 "b"])
-  (.add priority-queue [2 "c"])
-  (.poll priority-queue)
-  (.PerformKsmpsAsync csound Csound
-                      (fn []
-                        (let [t (inc (.GetCurrentTimeSamples csound Csound))]
-                          (go  (loop []
-                                 ;; (prn "POLLAR")
-                                 (when-let [poll (async/poll! poll-channel)]
-                                   ;; (prn "POLIÐ GEKK" t)
-                                   (.add priority-queue poll)
-                                   (recur))
-                                 ;; (prn "POLL FIN" t)
-                                 ) ;; <---
-                               #_(loop [] (when (>= beat (.peekKey priority-queue))
-                                            (put! (.dequeue priority-queue) true)
-                                            (recur)))
-                               (while (let [p (.peek priority-queue)]
-                                        (and p (>= t (first p)))) 
-                                 (let [[_ dequeued-chan] (.poll priority-queue)]                                     
-                                   (>! dequeued-chan true)))))
-                        ;; (prn beat)
-                        ;; (go (>! metro-channel beat))
-                        ) 
-                      (fn [] (.Stop csound Csound))))
-
-;; (def *SR* (.GetKsmps csound Csound))
 
 (def bpm! nil)
 
@@ -105,30 +55,6 @@
     (set! (.-bpm Abletonlink) bpm))
 
 
-#_(def main-loop
-    (let [priority-queue (new PriorityQueue)]
-      (go-loop [new-events #queue []]
-        (let [new-events (if-not (empty? new-events)
-                           (do 
-                             (.enqueue priority-queue
-                                       (first (peek new-events))
-                                       (second (peek new-events)))
-                             (pop new-events))
-                           new-events)]
-          (when-let [time (<! metro-channel)] 
-            #_(prn (.getKeys priority-queue)
-                   (.getValues priority-queue))
-            (if (.isEmpty priority-queue)
-              (recur (if-let [poll (async/poll! poll-channel)]
-                       (conj new-events poll) new-events))
-              (do
-                ;;(prn "time: " time ">=" (.peekKey priority-queue))
-                (while (>= time (.peekKey priority-queue))
-                  (let [dequeued-chan (.dequeue priority-queue)]
-                    (go (>! dequeued-chan true))))
-                (recur (if-let [poll (async/poll! poll-channel)]
-                         (conj new-events poll)
-                         new-events)))))))))
 
 (comment 
   (go (js/console.log (<! metro-channel)))

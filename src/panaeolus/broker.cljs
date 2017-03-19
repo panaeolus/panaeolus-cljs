@@ -69,13 +69,14 @@
   (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
     (do ;;(prn "FEEDS!")
       (put! user-input-channel env)
-      nil
-      )
+      nil)
     (let [{:keys [dur pattern-name meter input-messages]} env
           user-input-channel (chan 0)
           engine-poll-channel (chan)
           initial-queue (create-event-queue dur input-messages)
-          initial-mod-div (calc-mod-div meter dur)]
+          initial-mod-div (calc-mod-div meter dur)
+          initial-fx (:fx env)
+          _ (when initial-fx ((:recompile-fn env)))]
       (swap! pattern-registry assoc pattern-name user-input-channel)
       (go-loop [index 0
                 a-index 0
@@ -87,7 +88,7 @@
                 new-user-data nil
                 last-tick  (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
                 stop? false
-                last-fx (:fx env)]
+                last-fx initial-fx]
         (let [{:keys [pause kill stop? dur input-messages meter fx]
                ;; :or {input-messages input-messages meter meter stop? stop?
                ;;      fx last-fx}
@@ -101,7 +102,7 @@
                            (fn? (:recompile-fn new-user-data)))
                   (println "recompileing fx-changes...")
                   ;; (prn new-user-data)
-                  ;;((:recompile-fn new-user-data))
+                  ((:recompile-fn new-user-data))
                   )
               ;;_ (when new-user-data (prn "END OF CALC"))
               new-user-data nil]
@@ -158,8 +159,7 @@
                          (async/poll! user-input-channel)))
                      (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
                      false
-                     fx)))))
-      nil)))
+                     fx))))))))
 
 
 (defn pat [pattern-name instr env]
