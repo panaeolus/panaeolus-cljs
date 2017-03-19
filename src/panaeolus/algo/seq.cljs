@@ -36,28 +36,33 @@
                                   (if (goog.string.isNumeric (name fv))
                                     (goog.string.toNumber (name fv))
                                     false))]
-          (recur (rest v) 
-                 (cond 
-                   rest? notenum
-                   key?  (if key-is-numeric?
-                           (into (subvec notenum 0 (dec (count notenum)))
-                                 (repeat key-is-numeric? (last notenum)))
-                           ;; ADD SCALE LOOKUP ETC HERE
-                           (conj notenum fv))
-                   :else (if (integer? fv)
-                           (conj notenum (Math/abs fv))
-                           (conj notenum 0)))
-                 ;; (if rest? num (conj num fv))
-                 (if rest? (conj dur rest?)
-                     (if key-is-numeric?
-                       (into (subvec dur 0 (dec (count dur)))
-                             (repeat key-is-numeric?
-                                     (/ (last dur) key-is-numeric?)))
-                       (conj dur grid)))
-                 (if-not (nil? extra)
-                   (+ added-len (max 0 (dec (goog.string.toNumber extra))))
-                   (if key-is-numeric?
-                     (+ added-len (max 0 (dec key-is-numeric?)))
-                     added-len))))
-        (assoc env :dur dur :seq-parsed? true :xtralen added-len :freq notenum)))))
+          (recur ;; (rest v)
+           (if extra
+             (into [(keyword extra)] (rest v))
+             (rest v))
+           (cond 
+             rest? notenum
+             key?  (if key-is-numeric?
+                     (into (subvec notenum 0 (dec (count notenum)))
+                           (repeat key-is-numeric? (last notenum)))
+                     ;; ADD SCALE LOOKUP ETC HERE
+                     (conj notenum fv))
+             :else (if (integer? fv)
+                     (conj notenum (Math/abs fv))
+                     (conj notenum 0)))
+           ;; (if rest? num (conj num fv))
+           (if rest? (conj dur rest?)
+               (if key-is-numeric?
+                 (into (subvec dur 0 (dec (count dur)))
+                       (repeat key-is-numeric?
+                               (/ (last dur) key-is-numeric?)))
+                 (conj dur grid)))
+           (if-not (nil? extra)
+             (+ added-len (max 0 (dec (goog.string.toNumber extra))))
+             (if key-is-numeric?
+               (+ added-len (max 0 (dec key-is-numeric?)))
+               added-len))))
+        (assoc env :dur dur :seq-parsed? true :xtralen added-len :freq notenum :len len)))))
+
+;; (panaeolus.algo.seq/seq {} '[x:2 x x:2 x])
 

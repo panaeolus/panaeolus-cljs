@@ -56,6 +56,19 @@
 (defn fold-hashmap [h-map]
   (reduce-kv #(assoc %1 %2 (first (keys %3))) {} h-map))
 
+;; Todo, create test for this
+(defn fill-the-bar [v len]
+  (let [cnt-v (count v)]
+    (loop [filled-v []
+           sum 0
+           indx 0]
+      (let [next (nth v (mod indx cnt-v))]
+        (if (< len (+ (Math/abs next) sum))
+          filled-v
+          (recur (conj filled-v next)
+                 (+ (Math/abs next) sum)
+                 (inc indx)))))))
+
 
 ;; Note to self
 ;; here the dur is really p3 but not
@@ -68,17 +81,15 @@
               (if (vector? d) d [d])
               ;; Should not be possible to reach this case.
               [1])
-        len (or (:len env) (count dur))
+        len (+ (or (:len env) (count dur)) (or (:xtralen env) 0))
         ;; len (let [s (or (:len env) (count dur))]
         ;;       (if (zero? s) (* 4 (:meter env)) s))
         ;; dur (take len (cycle dur))
         dur (remove #(or (zero? %)
                          (neg? %)) dur)
-        dur (if-let [p3 (:p3 env)]
-              (if number?
-                (->> (cycle [p3]) (take (count dur)) vec)
-                (->> (cycle p3) (take (count dur)) vec))
-              dur)
+        ;; dur (if number?
+        ;;       (->> (cycle [p3]) (take len) vec)
+        ;;       (->> (cycle p3) (take len) vec))
         dur (if-let [xtratim (:xtratim env)]
               (map #(* % xtratim) dur)
               dur)
@@ -109,7 +120,8 @@
                        (recur
                         (rest param-keys)
                         (into params [param-name value])))))))
-        (assoc env :input-messages input-messages)))))
+        (assoc env :input-messages input-messages :dur (fill-the-bar (:dur env) (:len env)))))))
 
 
-;; (ast-input-messages-builder {:grid 4, :len 16, :dur [0.25 0.25 0.25 0.125 0.125], :freq [0 0 0 0 0], :seq-parsed? true} (panaeolus.instruments.tr808/low_conga))
+;; (ast-input-messages-builder (panaeolus.algo.seq/seq {} '[x:2 x _ x]) (panaeolus.instruments.tr808/low_conga))
+

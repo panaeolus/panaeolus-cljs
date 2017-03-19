@@ -7,14 +7,13 @@
    [panaeolus.orchestra-parser :refer [ast-input-messages-builder]])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
-(def async (js/require "async"))
 
 (defn- calc-mod-div [meter durations]
   (let [meter (if meter
                 (if (< 0 meter) meter 0) 0)
         bar-length meter
         summed-durs (apply + (map Math/abs durations))]
-    (* 10000
+    (* 20000
        (if (< 0 meter)
          (* bar-length
             (inc (quot (dec summed-durs) bar-length)))
@@ -57,7 +56,7 @@
                                          (first input-messages))]))))))))))
 
 (defn- calculate-timestamp [current-time mod-div beat]
-  (let [beat (* beat 10000)
+  (let [beat (* beat 20000)
         current-beat (max (mod current-time mod-div) 0)
         delta (- beat current-beat)]
     (if (neg? delta)
@@ -70,42 +69,45 @@
     (do ;;(prn "FEEDS!")
       (put! user-input-channel env)
       nil)
-    (let [{:keys [dur pattern-name meter input-messages]} env
+    (let [{:keys [dur pattern-name meter len input-messages]} env
+          ;; _ (prn "INITIASL LEN" len)
           user-input-channel (chan 0)
           engine-poll-channel (chan)
           initial-queue (create-event-queue dur input-messages)
           initial-mod-div (calc-mod-div meter dur)
           initial-fx (:fx env)
-          _ (when initial-fx ((:recompile-fn env)))]
+          _ ((:recompile-fn env))]
       (swap! pattern-registry assoc pattern-name user-input-channel)
       (go-loop [index 0
                 a-index 0
                 mod-div initial-mod-div
                 mod-div-buffer initial-mod-div 
-                meter meter
+                len len ;;meter
                 queue initial-queue
                 queue-buffer initial-queue
                 new-user-data nil
                 last-tick  (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
                 stop? false
                 last-fx initial-fx]
-        (let [{:keys [pause kill stop? dur input-messages meter fx]
-               ;; :or {input-messages input-messages meter meter stop? stop?
-               ;;      fx last-fx}
-               }
+        (let [{:keys [pause kill stop? dur input-messages meter fx len]
+               :or {;;input-messages input-messages meter meter stop? stop?
+                    len len}}
               new-user-data
               [queue-buffer mod-div-buffer] (if dur
                                               [(create-event-queue dur input-messages)
-                                               (calc-mod-div meter dur)]
+                                               (calc-mod-div (or len meter) dur)]
                                               [queue-buffer mod-div-buffer])
-              _ (when (and (not= last-fx fx)
-                           (fn? (:recompile-fn new-user-data)))
+              _ (when (and new-user-data
+                           (or (not= last-fx fx) (nil? fx))
+                           ;;(fn? (:recompile-fn new-user-data))
+                           ) 
                   (println "recompileing fx-changes...")
                   ;; (prn new-user-data)
                   ((:recompile-fn new-user-data))
                   )
               ;;_ (when new-user-data (prn "END OF CALC"))
               new-user-data nil]
+          ;; (println (str "Mod-div: "  mod-div "Meter "len ))
           (if kill
             (swap! pattern-registry dissoc pattern-name user-input-channel)
             (if-let [next-event (peek queue)] 
@@ -113,19 +115,11 @@
                                last-tick
                                mod-div (first next-event))
                     wait-chn (chan)]
-                #_(go (>! poll-channel [(calculate-timestamp
-                                         last-tick
-                                         mod-div (first next-event))
-                                        engine-poll-channel]))
-                ;; (println (:pattern-name env) " Reynir að skjóta")
-                ;; (.until async (fn [] (= 1 @a)) (fn [cb] (js/setTimeout (fn [] (cb)) 1000)) (fn [] (prn "já")))
-                ;; (go (.ReadScore csound Csound (second next-event)))
-                ;; (.ScoreEvent csound Csound (second next-event))
                 (loop []
                   (if (<= timestamp (.GetCurrentTimeSamples csound Csound))
                     (do (.InputMessage csound Csound (second next-event))
                         (put! wait-chn true))
-                    (do (<! (timeout 2))
+                    (do (<! (timeout 1))
                         (recur))))
                 #_(.until async (fn []
                                   (prn (.GetCurrentTimeSamples csound Csound))
@@ -139,7 +133,8 @@
                          (inc a-index)
                          mod-div
                          mod-div-buffer
-                         meter
+                         ;; meter
+                         len
                          (pop queue)
                          queue-buffer
                          (async/poll! user-input-channel)
@@ -150,14 +145,14 @@
                      (inc a-index)
                      mod-div-buffer
                      mod-div-buffer
-                     meter
+                     ;; meter
+                     len
                      queue-buffer
                      queue-buffer
                      (if stop?
                        (<! user-input-channel)
-                       (do ;;(prn "bíður2")
-                         (async/poll! user-input-channel)))
-                     (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
+                       (async/poll! user-input-channel))
+                     (.GetCurrentTimeSamples csound Csound)
                      false
                      fx))))))))
 

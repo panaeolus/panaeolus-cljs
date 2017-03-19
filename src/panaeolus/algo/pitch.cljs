@@ -1,4 +1,5 @@
-(ns panaeolus.algo.pitch)
+(ns panaeolus.algo.pitch
+  (:require [panaeolus.freq :refer [midi->freq freq->midi]]))
 
 (defn octave
   "Octave pitch shift,
@@ -13,3 +14,7 @@
     (assoc env :freq (reduce #(if (neg? %2)
                                 (conj %1 %2)
                                 (conj %1 (* operator %2))) [] (:freq env)))))
+
+(defn midi [env]
+  (assoc env :freq (reduce (fn [x y] (conj x (midi->freq y))) [] (:freq env))))
+
