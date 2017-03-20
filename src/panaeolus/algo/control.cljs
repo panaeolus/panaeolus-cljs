@@ -45,6 +45,21 @@
   [& instruments]
   (vec instruments))
 
-
 (defn xtratim [env xtratim]
   (assoc env :xtratim xtratim))
+
+(defn xtim [env xtim]
+  (assoc env :p3 xtim))
+
+(defn louder [env]
+  (assoc env :amp (let [amp (:amp env)]
+                    (if (seqable? amp)
+                      (mapv #(+ % 3.5) amp)
+                      (+ 3.5 amp)))))
+
+(defn quieter [env]
+  (assoc env :amp (let [amp (:amp env)]
+                    (if (seqable? amp)
+                      (mapv #(- % 3.5) amp)
+                      (- 3.5 amp)))))
+

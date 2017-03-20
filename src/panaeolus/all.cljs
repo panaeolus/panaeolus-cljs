@@ -11,6 +11,7 @@
    panaeolus.instruments.tr808   
    panaeolus.instruments.sampler
    panaeolus.instruments.synths
+   panaeolus.instruments.plucked
    panaeolus.instruments.oscil-bank)
   (:require-macros [panaeolus.macros :refer [ demo -> forever]]))
 
@@ -26,6 +27,7 @@
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.oscil-bank)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.sampler)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.synths)
+  (panaeolus.macros/pull-symbols 'panaeolus.instruments.plucked)
   (panaeolus.macros/pull-macros  'panaeolus.all)
   ;;(panaeolus.macros/pull-macros  'panaeolus.macros)
   )
