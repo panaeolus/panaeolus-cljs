@@ -1,5 +1,6 @@
 (ns panaeolus.instruments.plucked
-  (:require [macchiato.fs :as fs]            
+  (:require [macchiato.fs :as fs]
+            [panaeolus.fx :refer [delayl freeverb flanger]]
             [panaeolus.engine :refer [Csound csound]])
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
@@ -10,4 +11,7 @@
    :p5 {:freq 90}
    :p6 {:dist 1}})
 
-;; (demo (pluck :freq 200 :amp -10)  5)
+
+;; (demo (pluck :freq 1190 :amp -8 :fx (delayl)))
+
+

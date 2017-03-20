@@ -34,8 +34,9 @@
 
 (def ^:private orc-init-fx
   (str
-   (fs/slurp "src/panaeolus/csound/fx/flanger.udo")
-   (fs/slurp "src/panaeolus/csound/fx/lofi.udo")))
+   (fs/slurp "src/panaeolus/csound/fx/flanger.udo") "\n"
+   (fs/slurp "src/panaeolus/csound/fx/lofi.udo") "\n"
+   (fs/slurp "src/panaeolus/csound/fx/delay.udo")))
 
 (def ^:private orc-init-bottom
   "

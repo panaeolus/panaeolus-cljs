@@ -24,6 +24,17 @@
     (format "\n %s, %s Flanger_stereo %s, %s, %s, %s, %s, %s, %s, %s \n"
             aL aR aL aR rate depth delay fback wet shape)))
 
+(defn delayl [& {:keys [base shape ival scatter spread
+                        mode hpf lpf fback layers]
+                 :or {base 50 layers 8 ival 0.07
+                      shape 1 scatter 0 spread 0.5
+                      fback 0.95 hpf 70 lpf 70 mode 1}}]
+  (fn [aL aR]
+    (str 
+     (format  "\n%s DelayLayer %s*4,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
+              aL aL base shape ival scatter spread mode hpf lpf fback layers)
+     (format  "\n%s DelayLayer %s*4,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
+              aR aR base shape ival scatter spread mode hpf lpf fback layers))))
 
 (comment
   (freeverb :room 1)
