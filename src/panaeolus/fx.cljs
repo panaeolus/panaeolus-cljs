@@ -36,6 +36,7 @@
      (format  "\n%s DelayLayer %s*4,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
               aR aR base shape ival scatter spread mode hpf lpf fback layers))))
 
+
 (comment
   (freeverb :room 1)
 
