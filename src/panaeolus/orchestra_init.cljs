@@ -1,5 +1,6 @@
 (ns panaeolus.orchestra-init
-  (:require [macchiato.fs :as fs]))
+  (:require [macchiato.fs :as fs])
+  (:import [goog.string format]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIAL CSOUND ORCHESTRA ;;
@@ -18,14 +19,16 @@
   (str
    (fs/slurp "src/panaeolus/csound/tables/tables.orc") "\n"
    (fs/slurp "src/panaeolus/csound/tables/oscil_bank.orc") "\n"
-   (fs/slurp "src/panaeolus/csound/tables/hammer.orc")))
+   (fs/slurp "src/panaeolus/csound/tables/hammer.orc") "\n"
+   (fs/slurp "src/panaeolus/csound/tables/scanned.orc")))
+
+
 
 (def ^:private orc-init-instr-1
   "
-  ;;alwayson 1
+  ;; alwayson 1
   ;; zakinit 4, 1 
   instr 1
-  ;; setksmps 1
   endin
   ")
 
@@ -66,7 +69,7 @@
 
 (def orc-init
   (str orc-init-constants
-       orc-init-tables
+       orc-init-tables "\n"
        orc-init-instr-1 "\n"
        orc-init-udo "\n"
        orc-init-fx "\n"

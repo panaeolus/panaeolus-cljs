@@ -81,12 +81,14 @@
               (if (vector? d) d [d])
               ;; Should not be possible to reach this case.
               [1])
-        len (+ (or (:len env) (count dur)) (or (:xtralen env) 0))
+        dur (remove #(or (zero? %) (neg? %)) dur)
+        len (if (:uncycle? env)
+              (count dur)
+              (+ (or (:len env) (count dur)) (or (:xtralen env) 0)))
         ;; len (let [s (or (:len env) (count dur))]
         ;;       (if (zero? s) (* 4 (:meter env)) s))
         ;; dur (take len (cycle dur))
-        dur (remove #(or (zero? %)
-                         (neg? %)) dur)
+        
         ;; dur (if number?
         ;;       (->> (cycle [p3]) (take len) vec)
         ;;       (->> (cycle p3) (take len) vec))
@@ -120,8 +122,10 @@
                        (recur
                         (rest param-keys)
                         (into params [param-name value])))))))
-        (assoc env :input-messages input-messages :dur (fill-the-bar (:dur env) (:len env)))))))
+        (assoc env :input-messages input-messages :dur (if (:uncycle? env)
+                                                         (:dur env)
+                                                         (fill-the-bar (:dur env) (:len env))))))))
 
 
-;; (ast-input-messages-builder (panaeolus.algo.seq/seq {} '[x:2 x _ x]) (panaeolus.instruments.tr808/low_conga))
+;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? true} '[-1 20 -1 20]) (panaeolus.instruments.tr808/low_conga))
 

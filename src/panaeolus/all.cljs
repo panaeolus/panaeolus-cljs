@@ -1,6 +1,7 @@
 (ns panaeolus.all
   (:require
    panaeolus.algo.seq
+   panaeolus.algo.seq-algo
    panaeolus.engine
    [panaeolus.broker :refer [pat]] 
    panaeolus.fx
@@ -23,6 +24,7 @@
   (panaeolus.macros/pull-symbols 'panaeolus.algo.control)
   (panaeolus.macros/pull-symbols 'panaeolus.algo.pitch)
   (panaeolus.macros/pull-symbols 'panaeolus.algo.seq)
+  (panaeolus.macros/pull-symbols 'panaeolus.algo.seq-algo)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.tr808)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.oscil-bank)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.sampler)

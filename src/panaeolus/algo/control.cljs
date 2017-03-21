@@ -5,8 +5,11 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:import [cljs.core.async.impl.channels]))
 
-(defn kill [env]
-  (assoc env :kill true))
+(defn kill [env-or-patname]
+  (if (map? env-or-patname)
+    (assoc env-or-patname :kill true)
+    (go (>! (get @pattern-registry env-or-patname) {:kill true})
+        (swap! pattern-registry dissoc env-or-patname))))
 
 (defn killall []
   (go (loop [c (vals (dissoc @pattern-registry :forever))]

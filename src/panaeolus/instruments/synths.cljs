@@ -38,6 +38,28 @@
    :p4 {:amp -12}
    :p5 {:freq 200}})
 
+(definstrument "scan"
+  (fs/slurp "src/panaeolus/csound/orchestra/synth/scan.orc")
+  {:p3 {:dur 2.5}
+   :p4 {:amp -12}
+   :p5 {:freq 440}
+   :p6 {:rate 0.01}
+   :p7 {:lpf 1200}
+   :p8 {:res 0.4}
+   :p9 {:lfo1 0}
+   :p10 {:lfo2 0}
+   :p11 {:lfo3 0}
+   :p12 {:lfo4 0}
+   :p13 {:type 1}
+   :p14 {:mass 3}
+   :p15 {:stif 0.01}
+   :p16 {:center 0.1}
+   :p17 {:damp -0.005}
+   :p18 {:pos 0}
+   :p19 {:y 0}}  )
+
+
+;; (demo (scan :freq 150))
 
 ;; (demo (asfm  :freq 100 :cutoff 1200 :amp 0 :mod 2.9 :fx [(lofi :bits 4) (freeverb :sr 9000)] :index 2))
 

@@ -56,6 +56,7 @@
                                          (first input-messages))]))))))))))
 
 (defn- calculate-timestamp [current-time mod-div beat]
+  (println current-time mod-div beat)
   (let [beat (* beat 20000)
         current-beat (max (mod current-time mod-div) 0)
         delta (- beat current-beat)]
@@ -66,7 +67,7 @@
 
 (defn pattern-loop-queue [env]
   (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
-    (do ;;(prn "FEEDS!")
+    (do ;;(prn env)
       (put! user-input-channel env)
       nil)
     (let [{:keys [dur pattern-name meter len input-messages]} env
@@ -107,7 +108,7 @@
                   )
               ;;_ (when new-user-data (prn "END OF CALC"))
               new-user-data nil]
-          ;; (println (str "Mod-div: "  mod-div "Meter "len ))
+          ;; (println (str "Mod-div: "  mod-div (count queue-buffer)))
           (if kill
             (swap! pattern-registry dissoc pattern-name user-input-channel)
             (if-let [next-event (peek queue)] 

@@ -22,8 +22,8 @@ instr 1
   endif
 
   aenv  linseg 0, 0.0005, 1, p3 - 0.0395, 1, 0.02, 0, 0.01, 0
-  aL =  aL*aenv
-  aR =  aR*aenv 
+  aL =  aL*aenv/2
+  aR =  aR*aenv/2
 
   outs aL, aR
 endin

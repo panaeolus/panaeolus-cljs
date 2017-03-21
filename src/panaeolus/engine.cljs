@@ -62,9 +62,10 @@
   (go (let [event-c (chan)]
         (>! poll-channel [3000 event-c])
         (when (<! event-c)
-          (.InputMessage csound Csound "i 2 0 1"))))
+          (.InputMessage csound Csound "i 1 0 1"))))
 
-  (.EvalCode csound Csound
+  
+  (.EvalCode csound Csound 
              "instr 2\nasig poscil 0.9, (100 + rnd(480))\nouts asig,asig\nendin"))
 
 
