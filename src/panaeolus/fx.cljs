@@ -30,11 +30,14 @@
                       shape 1 scatter 0 spread 0.5
                       fback 0.95 hpf 70 lpf 70 mode 1}}]
   (fn [aL aR]
-    (str 
-     (format  "\n%s DelayLayer %s*4,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
-              aL aL base shape ival scatter spread mode hpf lpf fback layers)
-     (format  "\n%s DelayLayer %s*4,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
-              aR aR base shape ival scatter spread mode hpf lpf fback layers))))
+    (format  "\n%s, %s DelayLayer %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
+             aL aR aL aR base shape ival scatter spread mode hpf lpf fback layers)))
+
+(defn perc [& {:keys [dur exp]
+               :or {dur 1 exp 0.1}}]
+  (fn [aL aR]
+    (format "\np3=%f\naPercEnv expon 1,%f,%f\n%s*=aPercEnv\n%s*=aPercEnv\n"
+            (* 1.1 dur) dur exp aL aR)))
 
 
 (comment

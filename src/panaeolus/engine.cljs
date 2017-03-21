@@ -65,8 +65,9 @@
           (.InputMessage csound Csound "i 1 0 1"))))
 
   
-  (.EvalCode csound Csound 
-             "instr 2\nasig poscil 0.9, (100 + rnd(480))\nouts asig,asig\nendin"))
+  (.EvalCode csound Csound  panaeolus.orchestra-init/orc-init-fx
+             ;; "instr 2\nasig poscil 0.9, (100 + rnd(480))\nouts asig,asig\nendin"
+             ))
 
 
 

@@ -68,6 +68,8 @@
   ;; (prn env)
   (if-let [bank (:bank env)]
     (case bank
+      ("pan" :pan) (freq-to-sample-num (or (:midi env) (:freq env))
+                                       0 (get all-samples :pan))
       ("jb" :jb) (freq-to-sample-num (or (:midi env) (:freq env))
                                      0 (get all-samples :jb))
       ("xx" :xx) (freq-to-sample-num (or (:midi env) (:freq env))

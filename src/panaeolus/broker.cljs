@@ -56,7 +56,6 @@
                                          (first input-messages))]))))))))))
 
 (defn- calculate-timestamp [current-time mod-div beat]
-  (println current-time mod-div beat)
   (let [beat (* beat 20000)
         current-beat (max (mod current-time mod-div) 0)
         delta (- beat current-beat)]

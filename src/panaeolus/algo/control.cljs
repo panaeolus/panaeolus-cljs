@@ -8,7 +8,8 @@
 (defn kill [env-or-patname]
   (if (map? env-or-patname)
     (assoc env-or-patname :kill true)
-    (go (>! (get @pattern-registry env-or-patname) {:kill true})
+    (go (when-let [poll-channel (get @pattern-registry env-or-patname)]
+          (>! poll-channel {:kill true}))
         (swap! pattern-registry dissoc env-or-patname))))
 
 (defn killall []

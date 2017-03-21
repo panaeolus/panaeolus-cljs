@@ -1,6 +1,6 @@
 ;; Iain McCurdy 2015
-opcode  DelayLayer,a,akkkkkkkkkip
-  aInSig,iBase,iShape,iInterval,iScatter,iSpread,iSepMode,iHPF,iLFP,iFeedback,iLayers,iCount xin
+opcode  DelayLayer,aa,aakkkkkkkkkip
+  aInSigL,aInSigR,iBase,iShape,iInterval,iScatter,iSpread,iSepMode,iHPF,iLFP,iFeedback,iLayers,iCount xin
   iRnd random  -0.5,0.5 ; i-time random value. A unique fixed value for each delay layer (and channel).
   kRnd = octave(iRnd * iScatter) ; scale random value by GUI widget control
   
@@ -16,12 +16,13 @@ opcode  DelayLayer,a,akkkkkkkkkip
   aWG atone aWG,iHPF
   aWG tone aWG,iLFP
   aWG dcblock2 aWG
-  delayw aInSig + (aWG*iFeedback)
+  delayw (aInSigL+aInSigR) + (aWG*iFeedback)
 
   if iCount<iLayers then
-    aMix DelayLayer aInSig,iBase,iShape,iInterval,iScatter,1-iSpread,iSepMode,iHPF,iLFP,iFeedback,iLayers,iCount+1
+    aMix, aMix DelayLayer aInSigL,aInSigR,iBase,iShape,iInterval,iScatter,1-iSpread,iSepMode,iHPF,iLFP,iFeedback,iLayers,iCount+1
   endif
-
-  xout aWG*limit:i(iSpread*2,0,1)*iAmp + aMix
-  aMix = 0 
+  aOut = aWG*limit:i(iSpread*2,0,1)*iAmp + aMix
+  xout aOut,aOut
+  aMix = 0
+  aOut = 0
 endop
