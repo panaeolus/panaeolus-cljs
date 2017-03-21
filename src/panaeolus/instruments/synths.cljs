@@ -9,8 +9,8 @@
   (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc")
   {:p3 {:dur 1}
    :p4 {:amp -12}
-   :p5 {:freq 40}
-   :p6 {:cutoff 500}})
+   :p5 {:freq 200}
+   :p6 {:lpf 500}})
 
 (definstrument "sweet"
   (fs/slurp "src/panaeolus/csound/orchestra/synth/sweet.orc")
@@ -41,8 +41,8 @@
 (definstrument "scan"
   (fs/slurp "src/panaeolus/csound/orchestra/synth/scan.orc")
   {:p3 {:dur 2.5}
-   :p4 {:amp -12}
-   :p5 {:freq 440}
+   :p4 {:amp -9}
+   :p5 {:freq 140}
    :p6 {:rate 0.01}
    :p7 {:lpf 1200}
    :p8 {:res 0.4}
@@ -58,8 +58,23 @@
    :p18 {:pos 0}
    :p19 {:y 0}}  )
 
+(definstrument "tb303"
+  (fs/slurp "src/panaeolus/csound/orchestra/synth/tb303.orc")
+  {:p3 {:dur 0.1}
+   :p4 {:amp -12}
+   :p5 {:freq 90}
+   :p6 {:wave 0}
+   :p7 {:res 10}
+   :p8 {:dist 20}
+   :p9 {:att 0.0001}
+   :p10 {:dec 0.001}
+   :p11 {:rel 0.1}
+   :p12 {:lpf 90} 
+   :p13 {:filt 1}})
 
-;; (demo (scan :freq 150))
+;; (demo (tb303 :freq 30 :lpf 500 :res 20 :att 0.01 :dec 0.06 :wave 1 :filt 1 :dist 200 ) 1)
+
+;; (demo (scan :freq 300 :fx (panaeolus.fx/bp :band 100) :amp -6))
 
 ;; (demo (asfm  :freq 100 :cutoff 1200 :amp 0 :mod 2.9 :fx [(lofi :bits 4) (freeverb :sr 9000)] :index 2))
 

@@ -34,10 +34,17 @@
              aL aR aL aR base shape ival scatter spread mode hpf lpf fback layers)))
 
 (defn perc [& {:keys [dur exp]
-               :or {dur 1 exp 0.1}}]
+               :or {dur 0.4 exp 0.1}}]
   (fn [aL aR]
     (format "\np3=%f\naPercEnv expon 1,%f,%f\n%s*=aPercEnv\n%s*=aPercEnv\n"
             (* 1.1 dur) dur exp aL aR)))
+
+
+(defn bp [& {:keys [center band]
+             :or {center 1000 band 100}}]
+  (fn [aL aR]
+    (format "\n%s butbp %s, %f,%f\n\n%s butbp %s, %f,%f\n"
+            aL aL center band aR aR center band)))
 
 
 (comment
