@@ -13,11 +13,9 @@ instr 1
   ifilt = p13
 
   p3 = iatt+idec
-  
-  
-  kCfOctEnv expsegr 0.001, iatt, ilpf, idec, ibasefreq,irel,ibasefreq
-  ; kCfOctEnv limit kCfOctEnv, ilpf2, sr/2
-
+  iminval = 1/sr
+  aCfOctEnv expsegr 0.001, max:i(iminval,iatt), ilpf, max:i(iminval,idec), ibasefreq,irel,max:i(iminval,ibasefreq)
+  ; aCfOctEnv limit aCfOctEnv, ibasefreq, ilpf
 
   
   if iwave == 0 then
@@ -33,21 +31,24 @@ instr 1
   endif
 
   if ifilt==1 then
-    asig moogladder asig, kCfOctEnv,ires		;LOWPASS
+    asig moogladder asig/2, aCfOctEnv,ires
     asig limit asig, 0, 0.8
   else
-    asig	lpf18	asig, kCfOctEnv ,ires, (idist^2)*20		;LOWPASS
-    iSclGain2  ftgenonce  0, 0, 1024, -16, 1, 1024, -8, 0.1
-    if idist > 0 then
-      iGain table int(idist), iSclGain2, 1			;READ GAIN VALUE FROM RESCALING CURVE
-      asig *= iGain
-      asig butlp asig, ilpf
-    endif
+    asig lpf18 asig, aCfOctEnv ,ires, (idist^2)*20 ;LOWPASS
+    ; asig *= idist
+    asig butlp asig, ilpf
   endif
   ;FATTEN SOUND
   af1	resonz	asig,rnd(100)+30,rnd(20)*50+10,1
   aM	ntrpol	asig,af1*5,0.3
-  ; aenv	linsegr	1, 0.05, 0
-  aM *= iamp
+  ; aenv
+  ; linsegr	1, 0.05, 0
+  if ifilt == 1 then 
+    aM *= iamp*0.3
+  else
+    aM *= iamp
+  endif 
+  aDeclick linseg 0, 0.02, 1, p3 - 0.05, 1, 0.02, 0, 0.01, 0
+  aM *= aDeclick
   outs aM, aM
 endin
