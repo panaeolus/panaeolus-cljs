@@ -93,11 +93,14 @@
                :or {;;input-messages input-messages meter meter stop? stop?
                     len len}}
               new-user-data
-              [queue-buffer mod-div-buffer] (if dur
-                                              [(create-event-queue dur input-messages)
-                                               (calc-mod-div (or len meter) dur)]
-                                              [queue-buffer mod-div-buffer])
-              _ (when (and new-user-data
+              [queue-buffer mod-div-buffer] (if kill
+                                              [nil nil]
+                                              (if dur
+                                                [(create-event-queue dur input-messages)
+                                                 (calc-mod-div (or len meter) dur)]
+                                                [queue-buffer mod-div-buffer]))
+              _ (when (and (not kill)
+                           new-user-data
                            (or (not= last-fx fx) (nil? fx))
                            ;;(fn? (:recompile-fn new-user-data))
                            ) 
@@ -195,6 +198,7 @@
     :kill true
     })
 
+  (.EvalCode csound Csound "giSigmoid ftgen  0, 0, 1024, 19, 0.5, 0.5, 270, 0.5")
   (.ScoreEvent csound Csound "i" #js [2 0 1])
   (.InputMessage csound Csound "i 2 0 1")
   (dur->event-queue [1 1 1 1] #queue []))

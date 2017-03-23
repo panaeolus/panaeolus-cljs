@@ -40,11 +40,25 @@
             (* 1.1 dur) dur exp aL aR)))
 
 
-(defn bp [& {:keys [center band]
-             :or {center 1000 band 100}}]
+(defn butbp [& {:keys [center band]
+                :or {center 1000 band 100}}]
   (fn [aL aR]
     (format "\n%s butbp %s, %f,%f\n\n%s butbp %s, %f,%f\n"
             aL aL center band aR aR center band)))
+
+(defn buthp [& cutoff]
+  (let [cutoff (if (empty? cutoff)
+                 200 (first cutoff))]
+    (fn [aL aR]
+      (format "\n%s buthp %s,%f\n\n%s buthp %s, %f\n"
+              aL aL cutoff aR aR cutoff))))
+
+(defn butlp [& cutoff]
+  (let [cutoff (if (empty? cutoff)
+                 1000 (first cutoff))]
+    (fn [aL aR]
+      (format "\n%s butlp %s,%f\n\n%s butlp %s, %f\n"
+              aL aL cutoff aR aR cutoff))))
 
 
 (comment

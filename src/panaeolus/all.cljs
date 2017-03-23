@@ -9,7 +9,8 @@
    panaeolus.orchestra-parser
    [panaeolus.orchestra-parser :as p]
    panaeolus.algo.pitch
-   panaeolus.instruments.tr808   
+   panaeolus.instruments.tr808
+   panaeolus.instruments.fof
    panaeolus.instruments.sampler
    panaeolus.instruments.synths
    panaeolus.instruments.plucked
@@ -19,7 +20,7 @@
 
 (do
   (panaeolus.macros/pull-symbols 'panaeolus.broker)
-  (panaeolus.macros/pull-symbols 'panaeolus.engine) 
+  (panaeolus.macros/pull-symbols 'panaeolus.engine)
   (panaeolus.macros/pull-symbols 'panaeolus.fx)
   (panaeolus.macros/pull-symbols 'panaeolus.algo.control)
   (panaeolus.macros/pull-symbols 'panaeolus.algo.pitch)
@@ -27,6 +28,7 @@
   (panaeolus.macros/pull-symbols 'panaeolus.algo.seq-algo)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.tr808)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.oscil-bank)
+  (panaeolus.macros/pull-symbols 'panaeolus.instruments.fof)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.sampler)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.synths)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.plucked)

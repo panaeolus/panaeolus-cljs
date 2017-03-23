@@ -1,5 +1,6 @@
 (ns panaeolus.algo.pitch
-  (:require [panaeolus.freq :refer [midi->freq freq->midi]]))
+  (:require [panaeolus.freq :refer [midi->freq freq->midi
+                                    scale-from-midi]]))
 
 (defn octave
   "Octave pitch shift,
@@ -18,3 +19,12 @@
 (defn midi [env]
   (assoc env :freq (reduce (fn [x y] (conj x (midi->freq y))) [] (:freq env))))
 
+(defn scale [env mode & position]
+  (let [freq (:freq env)
+        position (if-not (empty? position)
+                   (first position) 0)]
+    (assoc env :freq (mapv #(nth (scale-from-midi position mode :span (max (count freq) (apply max freq))) %) freq))))
+
+
+;; (scale {:dur [1 1 1 1 1 1 1], :seq-parsed? true, :xtralen 0, :freq [0 0 1 3 2 0 7], :len 16, :kill true} :major)
+;; (scale {:freq [32 34 36 ]} :major )

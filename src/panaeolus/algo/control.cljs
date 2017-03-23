@@ -1,8 +1,8 @@
 (ns panaeolus.algo.control
   (:require
-   [cljs.core.async :refer [>!]]
-   [panaeolus.engine :refer [pattern-registry]])
-  (:require-macros [cljs.core.async.macros :refer [go]])
+   [cljs.core.async :refer [>! put!]]
+   [panaeolus.engine :refer [pattern-registry csound Csound]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:import [cljs.core.async.impl.channels]))
 
 (defn kill [env-or-patname]
@@ -12,12 +12,39 @@
           (>! poll-channel {:kill true}))
         (swap! pattern-registry dissoc env-or-patname))))
 
+#_(defn solo [env-or-patname]
+    (if (map? env-or-patname)
+      (do (go-loop [c (vals (dissoc @pattern-registry :forever (:pattern-name env-or-patname)))] 
+            (if (empty? c)
+              nil
+              ;;(reset! pattern-registry (select-keys @pattern-registry [:forever (:pattern-name env-or-patname)]))
+              (do ;;(prn (first c))
+                (>! (first c) {:kill true})
+                (recur (rest c))))) env-or-patname)
+      (go (when-let [poll-channel (get @pattern-registry (str env-or-patname))]
+
+            (>! poll-channel {:kill true})
+            (swap! pattern-registry dissoc env-or-patname)))))
+
+(defn solo [env-or-patname]
+  (go-loop [c (vals (dissoc @pattern-registry :forever (str env-or-patname)))] 
+    (if (empty? c)
+      nil
+      ;;(reset! pattern-registry (select-keys @pattern-registry [:forever (:pattern-name env-or-patname)]))
+      (do ;;(prn (first c))
+        (>! (first c) {:kill true})
+        (recur (rest c))))))
+
+
 (defn killall []
-  (go (loop [c (vals (dissoc @pattern-registry :forever))]
+  (go (run! #(.InputMessage csound Csound (str "i " % " 0 -1"))
+            (:forever @pattern-registry))
+      (loop [c (vals (dissoc @pattern-registry :forever))] 
         (if (empty? c)
-          (reset! pattern-registry (select-keys @pattern-registry [:forever]))
-          (do (>! (first c) {:kill true})
-              (recur (rest c)))))))
+          (reset! pattern-registry {:forever #{}})
+          (do 
+            (>! (first c) {:kill true})
+            (recur (rest c)))))))
 
 (defn stop [env]
   (assoc env :stop? true))
@@ -52,8 +79,8 @@
 (defn xtratim [env xtratim]
   (assoc env :xtratim xtratim))
 
-(defn xtim [env xtim]
-  (assoc env :p3 xtim))
+(defn xtim [env xt]
+  (assoc env :xtim xt))
 
 (defn louder [env]
   (assoc env :amp (let [amp (:amp env)]

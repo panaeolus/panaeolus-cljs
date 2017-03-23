@@ -1,6 +1,6 @@
 instr 1
   idur = p3
-  iamp =  ampdb(p4)
+  iamp =  ampdb(p4-6)
   ibasefreq = p5
   iwave   = p6
   ires = p7
@@ -11,7 +11,8 @@ instr 1
   ilpf = p12
   ; iexpon = p12
   ifilt = p13
-
+  ilpf *= ibasefreq
+  ilpf limit ilpf, 0.001, sr/2
   p3 = iatt+idec
   iminval = 1/sr
   aCfOctEnv expsegr 0.001, max:i(iminval,iatt), ilpf, max:i(iminval,idec), ibasefreq,irel,max:i(iminval,ibasefreq)

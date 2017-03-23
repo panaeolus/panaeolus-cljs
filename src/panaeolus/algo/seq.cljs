@@ -1,5 +1,6 @@
 (ns panaeolus.algo.seq
-  (:require [clojure.string :as string])
+  (:require [clojure.string :as string]
+            [panaeolus.freq])
   (:import [goog.string.isNumeric]
            [goog.string.toNumber]))
 
@@ -10,6 +11,8 @@
    is equal in time. Numbers represent instrument
    group index or sample bank midi."
   [env v & grid+len]
+  (when (some seqable? grid+len)
+    (throw (js/Error. (str "ERROR IN SEQ"))))
   (let [[grid len] grid+len
         grid (/ 1 (or (:grid env) grid 1))
         len (or (:len env) len 16)] 
@@ -64,5 +67,6 @@
                added-len))))
         (assoc env :dur dur :seq-parsed? true :xtralen added-len :freq notenum :len len)))))
 
-;; (panaeolus.algo.seq/seq {} '[x:2 x x:2 x])
+;; (panaeolus.algo.seq/seq {} '[x _ x _ x _ x _ 1t10])
+
 

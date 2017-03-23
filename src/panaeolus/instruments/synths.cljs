@@ -61,16 +61,16 @@
 (definstrument "tb303"
   (fs/slurp "src/panaeolus/csound/orchestra/synth/tb303.orc")
   {:p3 {:dur 0.1}
-   :p4 {:amp -10}
+   :p4 {:amp -16}
    :p5 {:freq 90}
-   :p6 {:wave 0}
-   :p7 {:res 10}
+   :p6 {:wave 4}
+   :p7 {:res 1.9}
    :p8 {:dist 20}
    :p9 {:att 0.03}
    :p10 {:dec 0.1}
    :p11 {:rel 0.1}
-   :p12 {:lpf 90} 
-   :p13 {:filt 1}})
+   :p12 {:lpf 1.1} 
+   :p13 {:filt 0}})
 
 ;; (demo (tb303 :freq 30 :lpf 500 :res 20 :att 0.01 :dec 0.06 :wave 1 :filt 1 :dist 200 ) 1)
 

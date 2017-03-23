@@ -84,7 +84,7 @@
         dur (remove #(or (zero? %) (neg? %)) dur)
         len (if (:uncycle? env)
               (count dur)
-              (+ (or (:len env) (count dur)) (or (:xtralen env) 0)))
+              (+ (or (:len env) (count dur)) (or (* (:xtralen env) (quot (:len env) (count dur))) 0)))
         ;; len (let [s (or (:len env) (count dur))]
         ;;       (if (zero? s) (* 4 (:meter env)) s))
         ;; dur (take len (cycle dur))
@@ -92,6 +92,9 @@
         ;; dur (if number?
         ;;       (->> (cycle [p3]) (take len) vec)
         ;;       (->> (cycle p3) (take len) vec))
+        dur (if-let [xtim (:xtim env)]
+              (vec (repeat (count dur) xtim))
+              dur)
         dur (if-let [xtratim (:xtratim env)]
               (map #(* % xtratim) dur)
               dur)
@@ -127,5 +130,6 @@
                                                          (fill-the-bar (:dur env) (:len env))))))))
 
 
-;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? true} '[-1 20 -1 20]) (panaeolus.instruments.tr808/low_conga))
+;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[3 5 3 5 3 5 3 5:] 2 16) (panaeolus.instruments.tr808/low_conga))
+;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? true} '[-1 20 -1 20]) (panaeolus.instruments.synths/sweet))
 

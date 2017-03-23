@@ -8,13 +8,23 @@
   (assoc env :uncycle? true))
 
 
-(defn shuffle
-  "If given seqable element
-   then it behaves like clj.core/shuffle"
+(defn scramble
   [env]
-  (if (seqable? env)
-    (cljs.core/shuffle env)
-    (let [durs (:dur env)
-          freq (:freq env)]
-      (prn durs freq)
-      (assoc env :dur durs))))
+  (let [durs (shuffle (:dur env))
+        freq (shuffle (:freq env))] 
+    (assoc env :dur durs :freq freq)))
+
+
+(defn wrand 
+  "given a vector of slice sizes, returns the index of a slice given a
+  random spin of a roulette wheel with compartments proportional to
+  slices."
+  [slices]
+  (let [total (reduce + slices)
+        r (rand total)]
+    (loop [i 0 sum 0]
+      (if (< r (+ (slices i) sum))
+        i
+        (recur (inc i) (+ (slices i) sum))))))
+
+
