@@ -12,6 +12,6 @@
    :p6 {:dist 1}})
 
 
-;; (demo (pluck :freq 1190 :amp -8 :fx (delayl)))
+;; (demo (pluck :freq 1190 :amp -2 ))
 
 

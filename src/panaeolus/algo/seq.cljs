@@ -67,6 +67,6 @@
                added-len))))
         (assoc env :dur dur :seq-parsed? true :xtralen added-len :freq notenum :len len)))))
 
-;; (panaeolus.algo.seq/seq {} '[x _ x _ x _ x _ 1t10])
+;; (panaeolus.algo.seq/seq {} '[x _ x _ x _ x _ ] 1)
 
 

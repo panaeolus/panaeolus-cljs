@@ -16,7 +16,7 @@ instr 1
   p3 = iatt+idec
   iminval = 1/sr
   aCfOctEnv expsegr 0.001, max:i(iminval,iatt), ilpf, max:i(iminval,idec), ibasefreq,irel,max:i(iminval,ibasefreq)
-  ; aCfOctEnv limit aCfOctEnv, ibasefreq, ilpf
+  aCfOctEnv limit aCfOctEnv, ibasefreq, ilpf
 
   
   if iwave == 0 then

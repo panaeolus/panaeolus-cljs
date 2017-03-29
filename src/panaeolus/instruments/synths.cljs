@@ -21,7 +21,7 @@
 (definstrument "asfm"
   (fs/slurp "src/panaeolus/csound/orchestra/synth/asfm.orc")
   {:p3 {:dur 1}
-   :p4 {:amp -10}
+   :p4 {:amp -6}
    :p5 {:freq 100}
    :p6 {:mod 3}
    :p7 {:index 1}})
