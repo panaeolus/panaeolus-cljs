@@ -60,6 +60,11 @@
       (format "\n%s butlp %s,%f\n\n%s butlp %s, %f\n"
               aL aL cutoff aR aR cutoff))))
 
+(defn chorus []
+  (let []
+    (fn [aL aR]
+      (format "\n%s %s Chorus %s %s,%f\n"
+              aL aL cutoff aR aR cutoff))))
 
 (comment
   (freeverb :room 1)
