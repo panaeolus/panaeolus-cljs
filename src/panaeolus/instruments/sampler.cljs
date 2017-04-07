@@ -4,7 +4,7 @@
             [panaeolus.algo.control :refer [group]]
             [panaeolus.engine :refer [Csound csound]]
             [panaeolus.freq :refer [midi->freq freq->midi]]
-            [panaeolus.fx :refer [freeverb lofi]])
+            [panaeolus.fx :refer [freeverb lofi perc vibrato distort]])
   (:require-macros [panaeolus.macros :refer [definstrument demo]]))
 
 (def expand-home-dir (js/require "expand-home-dir"))
@@ -68,6 +68,20 @@
   ;; (prn env)
   (if-let [bank (:bank env)]
     (case bank
+      ("stl-kick" :stl-kick) (freq-to-sample-num (or (:midi env) (:freq env))
+                                                 0 (get all-samples :stl_kicks))
+      ("stl-perc" :stl-perc) (freq-to-sample-num (or (:midi env) (:freq env))
+                                                 0 (get all-samples :stl_percs))
+      ("stl-bass" :stl-bass) (freq-to-sample-num (or (:midi env) (:freq env))
+                                                 0 (get all-samples :stl_bass))
+      ("stl-snare" :stl-snare) (freq-to-sample-num (or (:midi env) (:freq env))
+                                                   0 (get all-samples :stl_snares))
+      ("stl-rise" :stl-rise) (freq-to-sample-num (or (:midi env) (:freq env))
+                                                 0 (get all-samples :stl_rise))
+      ("stl-texture" :stl-texture) (freq-to-sample-num (or (:midi env) (:freq env))
+                                                       0 (get all-samples :stl_textures))
+      ("stl-clap" :stl-clap) (freq-to-sample-num (or (:midi env) (:freq env))
+                                                 0 (get all-samples :stl_clap))
       ("pan" :pan) (freq-to-sample-num (or (:midi env) (:freq env))
                                        0 (get all-samples :pan))
       ("jb" :jb) (freq-to-sample-num (or (:midi env) (:freq env))
@@ -101,9 +115,47 @@
    :p6 {:freq 1000 :fn panaeolus.instruments.sampler/sampler-fn}
    :p7 {:loop 0}})
 
+(definstrument "nsampler"
+  (fs/slurp "src/panaeolus/csound/orchestra/sampler/nsampler.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:freq 440}
+   :p6 {:sample 1104}
+   :p7 {:samplefreq 130.82}})
 
-;; (demo (sampler :speed 1 :amp -12 :bank "rash" :freq 1))
+(definstrument "stl-kicks"
+  ;; 17 Samples
+  (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:speed 1}
+   :p6 {:freq 0 :fn (fn [env]
+                      (let [tbl-num-v (get all-samples :stl_kicks)]
+                        (nth tbl-num-v
+                             (mod (:freq env) (count tbl-num-v)))))}
+   :p7 {:loop 0}})
 
 
+(definstrument "stl-synths"
+  ;; 30 samples
+  (fs/slurp "src/panaeolus/csound/orchestra/sampler/nsampler.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:freq 440}
+   :p6 {:sample 0 :fn (fn [env]
+                        (let [tbl-num-v (into (get all-samples :stl_synths)
+                                              (get all-samples :stl_bass))]
+                          (nth tbl-num-v
+                               (mod (:sample env) (count tbl-num-v)))))}
+   :p7 {:samplefreq 130.82}})
 
+(comment 
+  (demo (nsampler :amp -12 :freq 120 :sample 1135 :fx []))
 
+  (demo (stl-synths :sample 20 :freq 400))
+
+  (demo (sampler :bank "stl-texture" :freq 14
+                 :fx [(distort)]
+                 ))
+
+  (count (get all-samples :stl_synths)))

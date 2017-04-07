@@ -1,4 +1,6 @@
+;; From Victor Lazzarini
 opcode PitchShifter,a,akkip
+  asig,kp,kdel,ifn,imax xin
   kfm = (kp-1)/kdel
   amd1 phasor -kfm
   amd2 phasor -kfm,0.5

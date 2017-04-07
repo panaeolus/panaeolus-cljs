@@ -60,6 +60,22 @@
       (format "\n%s butlp %s,%f\n\n%s butlp %s, %f\n"
               aL aL cutoff aR aR cutoff))))
 
+(defn vibrato [& freq]
+  (let [delay1 0.1
+        delay2 1.2
+        freq (if (empty? freq)
+               5.5 (first freq))]
+    (fn [aL aR]
+      (format "\n%s,%s Vibrato %s,%s,%f,%f,%f,giSine\n"
+              aL aR aL aR freq delay1 delay2 ))))
+
+(defn distort [& dist]
+  (let [dist (if (empty? freq)
+               1.5 (first freq))]
+    (fn [aL aR]
+      (format (str "\n%s distort %s*3.8, %f,giDrone \n"
+                   "\n%s distort %s*3.8, %f,giDrone \n")
+              aL aL dist aR aR dist))))
 
 (comment
   (freeverb :room 1)

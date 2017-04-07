@@ -1,16 +1,17 @@
-opcode Vibrato,a,akkkj
-  asig,kf,kmin,kmax,ifn xin
+opcode Vibrato,aa,aaiiij
+  asig1,asig2,ifreq,imin,imax,ifn xin
+  asig = (asig1+asig2)/2
   idel = 0.1
   im = 2/sr
-  km = kmin < kmax ? kmin : kmax
-  kmx = kmax > kmin ? kmax : kmin
-  kmx = kmx < idel ? kmx : idel
-  km = km > im ? km : im
-  kwdth = kmx - km
-  amod oscili kwdth,kf,ifn
-  amod = (amod + kwdth)/2
+  im = imin < imax ? imin : imax
+  imx = imax > imin ? imax : imin
+  imx = imx < idel ? imx : idel
+  im = im > im ? im : im
+  iwdth = imx - im
+  amod oscili iwdth,ifreq,ifn
+  amod = (amod + iwdth)/2
   admp delayr idel
-  adel deltap3 amod+km
+  adel deltap3 amod+im
   delayw asig
-  xout adel
+  xout adel,adel
 endop

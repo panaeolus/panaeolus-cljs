@@ -39,7 +39,10 @@
   (str
    (fs/slurp "src/panaeolus/csound/fx/flanger.udo") "\n"
    (fs/slurp "src/panaeolus/csound/fx/lofi.udo") "\n"
-   (fs/slurp "src/panaeolus/csound/fx/delay.udo")))
+   (fs/slurp "src/panaeolus/csound/fx/delay.udo") "\n"
+   (fs/slurp "src/panaeolus/csound/fx/pitch_shifter.udo") "\n"
+   (fs/slurp "src/panaeolus/csound/fx/pitch_shifter_2.udo") "\n"
+   (fs/slurp "src/panaeolus/csound/fx/vibrato.udo")))
 
 (def ^:private orc-init-bottom
   "
