@@ -123,14 +123,7 @@
                     (do (.InputMessage csound Csound (second next-event))
                         (put! wait-chn true))
                     (do (<! (timeout 1))
-                        (recur))))
-                #_(.until async (fn []
-                                  (prn (.GetCurrentTimeSamples csound Csound))
-                                  (<= timestamp (.GetCurrentTimeSamples csound Csound)))
-                          (fn [cb] (js/setTimeout (fn [] cb) 1))
-                          (fn []
-                            (.InputMessage csound Csound (second next-event))
-                            (put! wait-chn true))) 
+                        (recur))))                
                 (when (<! wait-chn) 
                   (recur (inc index)
                          (inc a-index)

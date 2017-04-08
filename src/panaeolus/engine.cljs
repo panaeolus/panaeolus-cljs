@@ -10,10 +10,6 @@
 
 (declare csound)
 
-;; (def abletonlink (js/require "abletonlink"))
-
-;; (def Abletonlink (new abletonlink))
-
 
 (if-not csound
   (do (def csound (js/require "csound-api"))
@@ -45,14 +41,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-;; (def FastPriorityQueue (js/require "fastpriorityqueue"))
-;; (def priority-queue (new FastPriorityQueue (fn [a b] (< (first a) (first b)))))
-
-
 (def bpm! nil)
-
-#_(defn bpm! [bpm]
-    (set! (.-bpm Abletonlink) bpm))
 
 
 

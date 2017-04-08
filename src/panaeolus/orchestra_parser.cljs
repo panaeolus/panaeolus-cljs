@@ -22,7 +22,7 @@
   (let [[aL aR] (determine-outs instr)
         zak-system (str "chnmix " aL ",\"OutL\" \n"
                         "chnmix " aR ",\"OutR\" \n")
-        fx (if-not (empty? fx)
+        fx (if-not (or (nil? fx) (empty? fx))
              (if (fn? (first fx))
                ((first fx) aL aR)
                (apply str (map #(% aL aR) (first fx))))
@@ -36,14 +36,16 @@
 (defn compile-csound-instrument
   "name is the function name for the instr
    instr is the csound slurp of the instr definition."
-  [name instr & fx]
-  (let [instr-number (or (get @csound-instrument-map name) 
+  [name instr fx & pat-name]
+  (let [name (if (first pat-name)
+               (str name (first pat-name) name))
+        instr-number (or (get @csound-instrument-map name) 
                          (->> @csound-instrument-map
                               vals
                               (apply max)
                               inc))
         instr-string (replace-instr-number instr instr-number)
-        instr-string (insert-zak-and-fx instr-string (first fx))]
+        instr-string (insert-zak-and-fx instr-string fx)]
     (.CompileOrc csound Csound instr-string)
     (swap! csound-instrument-map assoc name instr-number)
     instr-number))
