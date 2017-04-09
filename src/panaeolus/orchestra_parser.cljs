@@ -38,7 +38,6 @@
   "name is the function name for the instr
    instr is the csound slurp of the instr definition."
   [name instr fx & pat-name]
-  ;; (prn pat-name)
   (let [name (if (first pat-name) 
                (str name (first pat-name))
                name)
@@ -99,7 +98,9 @@
         ;;       (->> (cycle [p3]) (take len) vec)
         ;;       (->> (cycle p3) (take len) vec))
         dur (if-let [xtim (:xtim env)]
-              (vec (repeat (count dur) xtim))
+              (if (seqable? xtim)
+                (take (count dur) (cycle xtim))
+                (vec (repeat (count dur) xtim)))
               dur)
         dur (if-let [xtratim (:xtratim env)]
               (map #(* % xtratim) dur)
@@ -129,7 +130,7 @@
                                                                 ;; use default instead.
                                                                 (if (some zero? freq)
                                                                   ;; replace all zeros
-                                                                  (reduce #(conj %1 (if (zero? %2) (:freq (nth instr' 2)) %2)) [] freq)
+                                                                  (reduce #(conj %1 (if (zero? %2) (:freq (nth instr' 3)) %2)) [] freq)
                                                                   freq))
                                          :else (get env' param-name))
                            ;; POLYPHONY COULD BE ADDED HERE
@@ -139,10 +140,9 @@
                        (recur
                         (rest param-keys)
                         (into params [param-name value])))))))
-        (do (prn "Input messages: " input-messages)
-            (assoc env :input-messages input-messages :dur (if (:uncycle? env)
-                                                             (:dur env)
-                                                             (fill-the-bar (:dur env) (:len env)))))))))
+        (assoc env :input-messages input-messages :dur (if (:uncycle? env)
+                                                         (:dur env)
+                                                         (fill-the-bar (:dur env) (:len env))))))))
 
 
 ;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[3 5 3 5 3 5 3 5:] 2 16) (panaeolus.instruments.tr808/low_conga))

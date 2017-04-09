@@ -65,7 +65,11 @@
                                     param-lookup-map#
                                     final-env#)))))))
         param-lookup-map#
+        ;; Final env for instrument
+        ;; are the two expressions the same?
         (merge or-map# env#)
+        ;; Default param map
+        or-map#
         ;; recompile-fn
         (fn [] (panaeolus.orchestra-parser/compile-csound-instrument
                 ~instr-name ~csound-string (:fx env#) (:pattern-name env#)))
@@ -75,7 +79,7 @@
   `(let [instr# ~instr
          dur# (or ~(first dur) 5)]
      ;; Always recompile demo
-     ((nth instr# 3))
+     ((nth instr# 4))
      (if (or (vector? (first instr#))
              (list? (first instr#)))
        (run! #(.InputMessage csound Csound %) (map #((first %) :dur dur#) instr#))

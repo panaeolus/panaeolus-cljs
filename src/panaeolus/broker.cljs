@@ -91,8 +91,7 @@
                 last-fx initial-fx]
         (let [{:keys [pause kill stop? dur input-messages meter fx len]
                :or {;;input-messages input-messages meter meter stop? stop?
-                    len len}}
-              new-user-data
+                    len len}}  new-user-data
               [queue-buffer mod-div-buffer] (if kill
                                               [nil nil]
                                               (if dur
@@ -154,12 +153,14 @@
 
 
 (defn pat [pattern-name instr env]
-  (when-not (or (empty? env) (nil? env))
-    (pattern-loop-queue (merge (nth instr 2)
-                               (ast-input-messages-builder
-                                (assoc env :pattern-name (name pattern-name)) instr)
-                               {:pattern-name (str pattern-name)
-                                :recompile-fn (nth instr 3)}))))
+  (let [instr (if (vector? instr)
+                instr (apply instr (mapcat identity env)))]
+    (when-not (or (empty? env) (nil? env))
+      (pattern-loop-queue (merge (nth instr 2)
+                                 (ast-input-messages-builder
+                                  (assoc env :pattern-name (name pattern-name)) instr)
+                                 {:pattern-name (str pattern-name)
+                                  :recompile-fn (nth instr 4)})))))
 
 (comment 
 

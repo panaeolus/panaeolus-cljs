@@ -82,6 +82,9 @@
 (defn xtim [env xt]
   (assoc env :xtim xt))
 
+(defn fx [env & fx]
+  (assoc env :fx (vec fx)))
+
 (defn louder [env]
   (assoc env :amp (let [amp (:amp env)]
                     (if (seqable? amp)

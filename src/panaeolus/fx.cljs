@@ -71,11 +71,12 @@
 
 (defn distort [& dist]
   (let [dist (if (empty? dist)
-               1.5 (first dist))]
+               0.5 (first dist))
+        dist (max 0.05 dist)]
     (fn [aL aR]
-      (format (str "\n%s distort %s*3.8, %f,giDrone \n"
-                   "\n%s distort %s*3.8, %f,giDrone \n")
-              aL aL dist aR aR dist))))
+      (format (str "\n%s distort %s*exp(%f), %f,giDrone \n"
+                   "\n%s distort %s*exp(%f), %f,giDrone \n")
+              aL aL dist dist aR aR dist dist))))
 
 (comment
   (freeverb :room 1)
