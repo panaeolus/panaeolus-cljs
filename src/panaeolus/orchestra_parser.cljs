@@ -33,12 +33,15 @@
 (defn- replace-instr-number [instr num]
   (clojure.string/replace instr #"instr\s+[0-9]*" (str "instr " num)))
 
+
 (defn compile-csound-instrument
   "name is the function name for the instr
    instr is the csound slurp of the instr definition."
   [name instr fx & pat-name]
-  (let [name (if (first pat-name)
-               (str name (first pat-name) name))
+  ;; (prn pat-name)
+  (let [name (if (first pat-name) 
+               (str name (first pat-name))
+               name)
         instr-number (or (get @csound-instrument-map name) 
                          (->> @csound-instrument-map
                               vals
@@ -55,6 +58,7 @@
 (defn generate-p-keywords [p-count]
   (map #(keyword (str "p" %)) (range 3 (+ 3 p-count))))
 
+;; Used by definst in macros
 (defn fold-hashmap [h-map]
   (reduce-kv #(assoc %1 %2 (first (keys %3))) {} h-map))
 
@@ -104,7 +108,7 @@
         ;; group? (if-not (fn? input-msg-fn) true false)
         instr-indicies (:instr-indicies env)]
     (loop [indx 0
-           input-messages []]
+           input-messages []] 
       (if-not (= len indx)
         (recur (inc indx)
                (let [instr-index (if (empty? instr-indicies)
@@ -118,8 +122,16 @@
                    (if (empty? param-keys)
                      (conj input-messages (apply (first instr') params))
                      (let [param-name (get (second instr') (first param-keys))
-                           param-value (if (= :dur param-name)
-                                         dur (get env' param-name))
+                           param-value (cond
+                                         (= :dur param-name) dur
+                                         (= :freq param-name) (let [freq (get env' param-name)]
+                                                                ;; No frequency should be 0
+                                                                ;; use default instead.
+                                                                (if (some zero? freq)
+                                                                  ;; replace all zeros
+                                                                  (reduce #(conj %1 (if (zero? %2) (:freq (nth instr' 2)) %2)) [] freq)
+                                                                  freq))
+                                         :else (get env' param-name))
                            ;; POLYPHONY COULD BE ADDED HERE
                            value (if (number? param-value)
                                    param-value
@@ -127,9 +139,10 @@
                        (recur
                         (rest param-keys)
                         (into params [param-name value])))))))
-        (assoc env :input-messages input-messages :dur (if (:uncycle? env)
-                                                         (:dur env)
-                                                         (fill-the-bar (:dur env) (:len env))))))))
+        (do (prn "Input messages: " input-messages)
+            (assoc env :input-messages input-messages :dur (if (:uncycle? env)
+                                                             (:dur env)
+                                                             (fill-the-bar (:dur env) (:len env)))))))))
 
 
 ;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[3 5 3 5 3 5 3 5:] 2 16) (panaeolus.instruments.tr808/low_conga))

@@ -156,7 +156,8 @@
 (defn pat [pattern-name instr env]
   (when-not (or (empty? env) (nil? env))
     (pattern-loop-queue (merge (nth instr 2)
-                               (ast-input-messages-builder env instr)
+                               (ast-input-messages-builder
+                                (assoc env :pattern-name (name pattern-name)) instr)
                                {:pattern-name (str pattern-name)
                                 :recompile-fn (nth instr 3)}))))
 

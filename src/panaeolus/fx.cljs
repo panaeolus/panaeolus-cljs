@@ -70,8 +70,8 @@
               aL aR aL aR freq delay1 delay2 ))))
 
 (defn distort [& dist]
-  (let [dist (if (empty? freq)
-               1.5 (first freq))]
+  (let [dist (if (empty? dist)
+               1.5 (first dist))]
     (fn [aL aR]
       (format (str "\n%s distort %s*3.8, %f,giDrone \n"
                    "\n%s distort %s*3.8, %f,giDrone \n")

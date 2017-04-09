@@ -9,6 +9,6 @@
   (fs/slurp "src/panaeolus/csound/orchestra/perc/kick.orc")
   {:p3 {:dur 1}
    :p4 {:amp -12}
-   :p5 {:freq 200}})
+   :p5 {:freq 60.3}})
 
-;; (demo (kick :freq 60) 1)
+;; (demo (kick :freq 50) 1)

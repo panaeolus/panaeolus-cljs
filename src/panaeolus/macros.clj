@@ -35,7 +35,6 @@
      nil))
 
 
-
 (defmacro definstrument [instr-name csound-string p-fields] 
   `(let [keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
                             (->> ~p-fields
@@ -44,9 +43,10 @@
                                  (map (comp symbol name first))))
          keys-vector# (-> keys-vector# distinct) 
          or-map# (merge {:dur 0.5}
-                        (apply merge (vals ~p-fields))) 
+                        (apply merge (vals ~p-fields)))
+         ;; Sends warning for wrong argument count, strange
          instr-number# (panaeolus.orchestra-parser/compile-csound-instrument
-                        ~instr-name ~csound-string)
+                        ~instr-name ~csound-string nil)
          param-lookup-map# (panaeolus.orchestra-parser/fold-hashmap ~p-fields)]
      (defn ~(symbol instr-name) 
        [~(symbol "&") {~(symbol "keys") keys-vector#
@@ -68,7 +68,7 @@
         (merge or-map# env#)
         ;; recompile-fn
         (fn [] (panaeolus.orchestra-parser/compile-csound-instrument
-                ~instr-name ~csound-string (:fx env#)))
+                ~instr-name ~csound-string (:fx env#) (:pattern-name env#)))
         instr-number#])))
 
 (defmacro demo [instr & dur]
