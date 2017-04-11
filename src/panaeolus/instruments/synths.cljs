@@ -68,11 +68,11 @@
    :p8 {:dist 20}
    :p9 {:att 0.03}
    :p10 {:dec 0.1}
-   :p11 {:rel 0.1}
+   :p11 {:sus 0}
    :p12 {:lpf 1.1} 
    :p13 {:filt 0}})
 
-;; (demo (tb303 :freq 30 :lpf 500 :res 20 :att 0.01 :dec 0.06 :wave 1 :filt 1 :dist 200 ) 1)
+;; (demo (tb303 :freq 40 :lpf 1.4 :res 20 :att 0.01 :dec 0.1 :sus 0.01 :wave 4 :filt 1 :dist 2  :amp -1 0.5) 0.9)
 
 ;; (demo (scan :freq 300 :fx (panaeolus.fx/bp :band 100) :amp -6))
 

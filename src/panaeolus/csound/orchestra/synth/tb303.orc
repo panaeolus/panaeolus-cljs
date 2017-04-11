@@ -7,16 +7,25 @@ instr 1
   idist = p8
   iatt = p9
   idec = p10
-  irel = p11
+  irel = max:i((p3 - iatt - idec), 0.001)
+  isus = p11
+  ; irel = p11
   ilpf = p12
   ; iexpon = p12
   ifilt = p13
   ilpf *= ibasefreq
   ilpf limit ilpf, 0.001, sr/2
-  p3 = iatt+idec
+  p3 = iatt+idec+isus+irel
   iminval = 1/sr
-  aCfOctEnv expsegr 0.001, max:i(iminval,iatt), ilpf, max:i(iminval,idec), ibasefreq,irel,max:i(iminval,ibasefreq)
-  aCfOctEnv limit aCfOctEnv, ibasefreq, ilpf
+  if ilpf < ibasefreq then
+    aCfOctEnv expsegr ilpf, max:i(iminval,iatt), ibasefreq, max:i(iminval,idec), max:i(iminval,isus), ibasefreq, irel,max:i(iminval,ilpf),ilpf
+    aCfOctEnv limit aCfOctEnv, ilpf, ibasefreq
+  else
+    aCfOctEnv expsegr ibasefreq, max:i(iminval,iatt), ilpf, max:i(iminval,isus),ilpf, max:i(iminval,idec), ibasefreq,irel,ibasefreq
+    aCfOctEnv limit aCfOctEnv, ibasefreq, ilpf
+  endif
+  
+  
 
   
   if iwave == 0 then
@@ -28,10 +37,11 @@ instr 1
   elseif iwave == 3 then
     asig buzz 0.2, ibasefreq,  sr/4/ilpf, giSine
   elseif iwave == 4 then
-    asig buzz 0.2, ibasefreq,  sr/4/ilpf, giDrone
+    asig poscil 0.2, ibasefreq,  giDrone
   endif
 
   if ifilt==1 then
+    ; asig zdf_ladder asig, aCfOctEnv,ires
     asig moogladder asig/2, aCfOctEnv,ires
     asig limit asig, 0, 0.8
   else
@@ -40,8 +50,10 @@ instr 1
     asig butlp asig, ilpf
   endif
   ;FATTEN SOUND
-  af1	resonz	asig,rnd(100)+30,rnd(20)*50+10,1
-  aM	ntrpol	asig,af1*5,0.3
+  af1 resonz asig, ibasefreq,ibasefreq/3.5,1
+  ; aM distort asig*5, 0.1, giSine
+  aM ntrpol asig,af1*5,0.9
+  aM buthp aM, 19
   ; aenv
   ; linsegr	1, 0.05, 0
   if ifilt == 1 then 

@@ -163,16 +163,13 @@
                                   :recompile-fn (nth instr 4)})))))
 
 (comment 
-
   (pat :melody1 (panaeolus.instruments.tr808/low_conga)
        #_(seq [1 1 1 1:2] 2)
 
        (panaeolus.macros/->  (assoc 
                               :dur [1 1 1 0.25 0.125 0.125 0.5])
                              (assoc :kill true)
-                             )
-       )
-
+                             ))
 
   (pattern-loop-queue
    (do (panaeolus.instruments.tr808/low_conga)

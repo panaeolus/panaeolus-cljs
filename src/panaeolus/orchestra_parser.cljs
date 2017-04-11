@@ -82,21 +82,20 @@
   (let [instr (if (fn? (first instr))
                 [instr] instr)
         instr-count (count instr)
-        dur (if-let [d (:dur env)]
-              (if (vector? d) d [d])
-              ;; Should not be possible to reach this case.
-              [1])
-        dur (remove #(or (zero? %) (neg? %)) dur)
+        dur' (if-let [d (:dur env)]
+               (if (vector? d) d [d])
+               ;; Should not be possible to reach this case.
+               [1])
+        dur (remove #(or (zero? %) (neg? %)) dur') 
         len (if (:uncycle? env)
               (count dur)
-              (+ (or (:len env) (count dur)) (or (* (:xtralen env) (quot (:len env) (count dur))) 0)))
-        ;; len (let [s (or (:len env) (count dur))]
-        ;;       (if (zero? s) (* 4 (:meter env)) s))
-        ;; dur (take len (cycle dur))
-        
-        ;; dur (if number?
-        ;;       (->> (cycle [p3]) (take len) vec)
-        ;;       (->> (cycle p3) (take len) vec))
+              (+ (->> (vec (take (:len env) (cycle dur')))
+                      (remove #(or (zero? %) (neg? %)))
+                      count)
+                 (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
+              ;;(+ (count dur) (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
+              )
+        ;; _ (prn (:len env) len)
         dur (if-let [xtim (:xtim env)]
               (if (seqable? xtim)
                 (take (count dur) (cycle xtim))
@@ -105,46 +104,79 @@
         dur (if-let [xtratim (:xtratim env)]
               (map #(* % xtratim) dur)
               dur)
-        ;; param-keys (keys param-lookup-map)
-        ;; group? (if-not (fn? input-msg-fn) true false)
         instr-indicies (:instr-indicies env)]
+    ;; Instrument group parsing
     (loop [indx 0
-           input-messages []] 
+           input-messages []]
+      (prn "INDEX: " input-messages)
       (if-not (= len indx)
-        (recur (inc indx)
+        (recur (inc indx) 
                (let [instr-index (if (empty? instr-indicies)
                                    0
                                    (min instr-count
                                         (nth instr-indicies (mod indx (count instr-indicies)))))
                      instr' (nth instr instr-index) 
                      env' (merge (nth instr' 2) env)]
+                 ;; Real parameter parsing starts here
                  (loop [param-keys (keys (second instr'))
-                        params []]
+                        params []
+                        nested-input-messages []
+                        meta-pattern-nesting-cnt nil
+                        meta-pattern-nesting-indx 0]
                    (if (empty? param-keys)
-                     (conj input-messages (apply (first instr') params))
+                     (if-not meta-pattern-nesting-cnt
+                       (conj input-messages (apply (first instr') params))
+                       (if (= (dec meta-pattern-nesting-indx) meta-pattern-nesting-cnt)
+                         (conj input-messages nested-input-messages)
+                         ;;(conj input-messages [(apply (first instr') params)])
+                         (recur (keys (second instr'))
+                                []
+                                (conj nested-input-messages params)
+                                meta-pattern-nesting-cnt
+                                (inc meta-pattern-nesting-indx))))
                      (let [param-name (get (second instr') (first param-keys))
+                           meta-pattern-nesting-cnt (if (pos? meta-pattern-nesting-indx)
+                                                      meta-pattern-nesting-cnt
+                                                      (if (vector? (first (get env' param-name)))
+                                                        (max (count (get env' param-name)) meta-pattern-nesting-cnt)
+                                                        meta-pattern-nesting-cnt)) 
+                           param-value (if-not meta-pattern-nesting-cnt
+                                         (get env' param-name)
+                                         (let [pmv (get env' param-name)]
+                                           (if (vector? (first pmv))
+                                             (nth pmv (mod (count pmv) meta-pattern-nesting-cnt))
+                                             pmv)))
+                           _ (prn param-value indx)
                            param-value (cond
                                          (= :dur param-name) dur
-                                         (= :freq param-name) (let [freq (get env' param-name)]
+                                         (= :freq param-name) (let [freq param-value]
                                                                 ;; No frequency should be 0
                                                                 ;; use default instead.
                                                                 (if (some zero? freq)
                                                                   ;; replace all zeros
                                                                   (reduce #(conj %1 (if (zero? %2) (:freq (nth instr' 3)) %2)) [] freq)
                                                                   freq))
-                                         :else (get env' param-name))
+                                         :else param-value ;;(get env' param-name)
+                                         )
                            ;; POLYPHONY COULD BE ADDED HERE
                            value (if (number? param-value)
                                    param-value
                                    (nth param-value (mod indx (count param-value))))]
                        (recur
                         (rest param-keys)
-                        (into params [param-name value])))))))
+                        (into params [param-name value])
+                        nested-input-messages
+                        meta-pattern-nesting-cnt
+                        meta-pattern-nesting-indx))))))
         (assoc env :input-messages input-messages :dur (if (:uncycle? env)
                                                          (:dur env)
                                                          (fill-the-bar (:dur env) (:len env))))))))
 
 
 ;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[3 5 3 5 3 5 3 5:] 2 16) (panaeolus.instruments.tr808/low_conga))
-;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? true} '[-1 20 -1 20]) (panaeolus.instruments.synths/sweet))
+#_(ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[10 20 _ 30] 1 8) (panaeolus.instruments.synths/sweet :amp [[-1 -2 -3]
+                                                                                                                                     [-4 -5 -6]
+                                                                                                                                     ]))
+
+;; TODO make test if positiv :dur count equals to count of input-messages
 

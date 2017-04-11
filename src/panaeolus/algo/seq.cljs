@@ -13,15 +13,15 @@
   [env v & grid+len]
   (when (some seqable? grid+len)
     (throw (js/Error. (str "ERROR IN SEQ"))))
-  (let [[grid len] grid+len
-        grid (/ 1 (or (:grid env) grid 1))
-        len (or (:len env) len 16)] 
-    (loop [v v
+  (let [[grid' len'] grid+len
+        grid (/ 1 (or (:grid env) grid' 1))
+        len (or (:len env) len' 16)] 
+    (loop [v' v
            notenum []
            dur []
            added-len 0]
-      (if-not (empty? v)
-        (let [fv (first v)
+      (if-not (empty? v')
+        (let [fv (first v')
               ;; _ (prn fv)
               [fv extra] (if-not (symbol? fv)
                            [fv nil]
@@ -41,8 +41,8 @@
                                     false))]
           (recur ;; (rest v)
            (if extra
-             (into [(keyword extra)] (rest v))
-             (rest v))
+             (into [(keyword extra)] (rest v'))
+             (rest v'))
            (cond 
              rest? notenum
              key?  (if key-is-numeric?
@@ -65,7 +65,8 @@
              (if key-is-numeric?
                (+ added-len (max 0 (dec key-is-numeric?)))
                added-len))))
-        (assoc env :dur dur :seq-parsed? true :xtralen added-len :freq notenum :len len)))))
+        (assoc env :dur dur :seq-parsed? true :xtralen added-len :freq notenum :len len
+               :seq-v v :seq-grid grid' :seq-len len')))))
 
 ;; (panaeolus.algo.seq/seq {} '[x _ x _ x _ x _ ] 1)
 

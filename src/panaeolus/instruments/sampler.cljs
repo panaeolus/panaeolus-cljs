@@ -82,6 +82,10 @@
                                                        0 (get all-samples :stl_textures))
       ("stl-clap" :stl-clap) (freq-to-sample-num (or (:midi env) (:freq env))
                                                  0 (get all-samples :stl_clap))
+      ("stl-hat" :stl-hat) (freq-to-sample-num (or (:midi env) (:freq env))
+                                               0 (get all-samples :stl_hats))
+      ("stl-fx" :stl-fx) (freq-to-sample-num (or (:midi env) (:freq env))
+                                             0 (get all-samples :stl_fx))
       ("pan" :pan) (freq-to-sample-num (or (:midi env) (:freq env))
                                        0 (get all-samples :pan))
       ("jb" :jb) (freq-to-sample-num (or (:midi env) (:freq env))
@@ -123,6 +127,9 @@
    :p6 {:sample 1104}
    :p7 {:samplefreq 130.82}})
 
+;; Hardcoded sample instruments
+;; TODO add these to a private config.
+
 (definstrument "stl-kicks"
   ;; 17 Samples
   (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")
@@ -136,18 +143,29 @@
    :p7 {:loop 0}})
 
 
-(definstrument "stl-synths"
+(definstrument "stl-synth"
   ;; 30 samples
   (fs/slurp "src/panaeolus/csound/orchestra/sampler/nsampler.orc")
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}
    :p6 {:sample 0 :fn (fn [env]
-                        (let [tbl-num-v (into (get all-samples :stl_synths)
-                                              (get all-samples :stl_bass))]
+                        (let [tbl-num-v (get all-samples :stl_synths)]
                           (nth tbl-num-v
                                (mod (:sample env) (count tbl-num-v)))))}
    :p7 {:samplefreq 130.82}})
+
+(definstrument "stl-bass"
+  ;; 30 samples
+  (fs/slurp "src/panaeolus/csound/orchestra/sampler/nsampler.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:freq 440}
+   :p6 {:sample 0 :fn (fn [env]
+                        (let [tbl-num-v (get all-samples :stl_bass)]
+                          (nth tbl-num-v
+                               (mod (:sample env) (count tbl-num-v)))))}
+   :p7 {:samplefreq 32.703}})
 
 (comment 
   (demo (nsampler :amp -12 :freq 120 :sample 1135 :fx []))
