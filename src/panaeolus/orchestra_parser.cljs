@@ -78,24 +78,28 @@
 ;; Note to self
 ;; here the dur is really p3 but not
 ;; the duration between events.
-(defn ast-input-messages-builder [env instr]
+
+(defn ast-input-messages-builder [env instr] 
   (let [instr (if (fn? (first instr))
                 [instr] instr)
         instr-count (count instr)
         dur' (if-let [d (:dur env)]
                (if (vector? d) d [d])
                ;; Should not be possible to reach this case.
-               [1])
-        dur (remove #(or (zero? %) (neg? %)) dur') 
+               [1]) 
+        dur (remove #(or (zero? %) (neg? %)) dur')
         len (if (:uncycle? env)
               (count dur)
-              (+ (->> (vec (take (:len env) (cycle dur')))
-                      (remove #(or (zero? %) (neg? %)))
-                      count)
-                 (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
+              (if-let [len (:len env)]
+                (+ (->> (vec (take (:len env) (cycle dur')))
+                        (remove #(or (zero? %) (neg? %)))
+                        count)
+                   (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
+                16)
               ;;(+ (count dur) (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
               )
         ;; _ (prn (:len env) len)
+        
         dur (if-let [xtim (:xtim env)]
               (if (seqable? xtim)
                 (take (count dur) (cycle xtim))
@@ -108,7 +112,7 @@
     ;; Instrument group parsing
     (loop [indx 0
            input-messages []]
-      (prn "INDEX: " input-messages)
+      ;; (prn "INDEX: " input-messages)
       (if-not (= len indx)
         (recur (inc indx) 
                (let [instr-index (if (empty? instr-indicies)
@@ -137,16 +141,16 @@
                      (let [param-name (get (second instr') (first param-keys))
                            meta-pattern-nesting-cnt (if (pos? meta-pattern-nesting-indx)
                                                       meta-pattern-nesting-cnt
-                                                      (if (vector? (first (get env' param-name)))
+                                                      (if (and (not (number? (get env' param-name)))
+                                                               (vector? (first (get env' param-name))))
                                                         (max (count (get env' param-name)) meta-pattern-nesting-cnt)
-                                                        meta-pattern-nesting-cnt)) 
+                                                        meta-pattern-nesting-cnt))
                            param-value (if-not meta-pattern-nesting-cnt
                                          (get env' param-name)
                                          (let [pmv (get env' param-name)]
                                            (if (vector? (first pmv))
                                              (nth pmv (mod (count pmv) meta-pattern-nesting-cnt))
                                              pmv)))
-                           _ (prn param-value indx)
                            param-value (cond
                                          (= :dur param-name) dur
                                          (= :freq param-name) (let [freq param-value]
@@ -161,7 +165,7 @@
                            ;; POLYPHONY COULD BE ADDED HERE
                            value (if (number? param-value)
                                    param-value
-                                   (nth param-value (mod indx (count param-value))))]
+                                   (nth param-value (mod indx (count param-value)))) ]
                        (recur
                         (rest param-keys)
                         (into params [param-name value])
@@ -174,9 +178,9 @@
 
 
 ;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[3 5 3 5 3 5 3 5:] 2 16) (panaeolus.instruments.tr808/low_conga))
-#_(ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[10 20 _ 30] 1 8) (panaeolus.instruments.synths/sweet :amp [[-1 -2 -3]
-                                                                                                                                     [-4 -5 -6]
-                                                                                                                                     ]))
+#_(ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[10 20 _ 30] 1 8) (panaeolus.instruments.synths/sweet :amp  -12 #_[-1 -2 -3
+                                                                                                                                            ;;[-4 -5 -6]
+                                                                                                                                            ]))
 
 ;; TODO make test if positiv :dur count equals to count of input-messages
 
