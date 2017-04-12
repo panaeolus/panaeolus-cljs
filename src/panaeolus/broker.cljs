@@ -74,7 +74,6 @@
           initial-queue (create-event-queue dur input-messages)
           initial-mod-div (calc-mod-div meter dur)
           initial-fx (:fx env)
-          _ (prn (:recompile-fn env))
           _ ((:recompile-fn env))]
       (swap! pattern-registry assoc pattern-name user-input-channel)
       (go-loop [index 0
@@ -159,7 +158,7 @@
                                  (ast-input-messages-builder
                                   (assoc env :pattern-name (name pattern-name)) instr)
                                  {:pattern-name (str pattern-name)
-                                  :recompile-fn (nth instr 3)})))))
+                                  :recompile-fn (nth instr 4)})))))
 
 (comment 
   (pat :melody1 (panaeolus.instruments.tr808/low_conga)
