@@ -19,7 +19,15 @@
             (inc (quot (dec summed-durs) bar-length)))
          summed-durs))))
 
-(defn- create-event-queue [durations input-messages] 
+;; input-messages (if (string? input-messages)
+;;                  [input-messages]
+;;                  (if (or (vector? (first input-messages))
+;;                          (list? (first input-messages)))
+;;                    (first input-messages)
+;;                    input-messages))
+
+
+(defn- create-event-queue [durations input-messages]
   (let [input-messages (if (string? input-messages)
                          [input-messages]
                          input-messages)]
@@ -55,6 +63,7 @@
                                      (or (first msg)
                                          (first input-messages))]))))))))))
 
+
 (defn- calculate-timestamp [current-time mod-div beat]
   (let [beat (* beat 20000)
         current-beat (max (mod current-time mod-div) 0)
@@ -71,17 +80,24 @@
     (let [{:keys [dur pattern-name meter len input-messages]} env
           user-input-channel (chan 0)
           engine-poll-channel (chan)
-          initial-queue (create-event-queue dur input-messages)
+          initial-queue (if (or (not (string? input-messages))
+                                (not (string? (first input-messages))))
+                          (mapv #(create-event-queue dur %) input-messages)
+                          (create-event-queue dur input-messages))
+          ;; initial-queue (create-event-queue dur input-messages)
           initial-mod-div (calc-mod-div meter dur)
           initial-fx (:fx env)
           _ ((:recompile-fn env))]
       (swap! pattern-registry assoc pattern-name user-input-channel)
       (go-loop [index 0
                 a-index 0
+                loop-cnt 0
                 mod-div initial-mod-div
                 mod-div-buffer initial-mod-div 
                 len len ;;meter
-                queue initial-queue
+                queue (if (string? (first initial-queue))
+                        initial-queue
+                        (first initial-queue))
                 queue-buffer initial-queue
                 new-user-data nil
                 last-tick  (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
@@ -93,7 +109,10 @@
               [queue-buffer mod-div-buffer] (if kill
                                               [nil nil]
                                               (if dur
-                                                [(create-event-queue dur input-messages)
+                                                [(if (or (not (string? input-messages))
+                                                         (not (string? (first input-messages))))
+                                                   (mapv #(create-event-queue dur %) input-messages)
+                                                   (create-event-queue dur input-messages))
                                                  (calc-mod-div (or len meter) dur)]
                                                 [queue-buffer mod-div-buffer]))
               _ (when (and (not kill)
@@ -124,6 +143,7 @@
                 (when (<! wait-chn) 
                   (recur (inc index)
                          (inc a-index)
+                         loop-cnt
                          mod-div
                          mod-div-buffer
                          ;; meter
@@ -136,11 +156,14 @@
                          fx)))
               (recur 0
                      (inc a-index)
-                     mod-div-buffer
+                     (inc loop-cnt)
+                     mod-div-buffer 
                      mod-div-buffer
                      ;; meter
                      len
-                     queue-buffer
+                     (if (string? (first queue-buffer))
+                       queue-buffer
+                       (nth queue-buffer (mod loop-cnt (count queue-buffer))))
                      queue-buffer
                      (if stop?
                        (<! user-input-channel)

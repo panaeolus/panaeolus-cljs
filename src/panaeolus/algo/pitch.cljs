@@ -17,7 +17,13 @@
                                 (conj %1 (* operator %2))) [] (:freq env)))))
 
 (defn midi [env]
-  (assoc env :freq (reduce (fn [x y] (conj x (midi->freq y))) [] (:freq env))))
+  (letfn [(toMidi [freq]
+            (reduce (fn [x y] (conj x (midi->freq y))) [] freq))]
+    (assoc env :freq (let [freq (:freq env)]
+                       (if (or (not (seqable? freq))
+                               (not (seqable? (first freq))))
+                         (toMidi freq)
+                         (mapv toMidi freq))))))
 
 (defn scale [env root & mode]
   (let [freq (:freq env)

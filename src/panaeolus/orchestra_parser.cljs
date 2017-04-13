@@ -126,60 +126,66 @@
         env' (merge (nth instr 2) env)
         instr-indicies (:instr-indicies env)
         recurcion-level (determine-meta-recurcion env instr)]
-    (loop [indx 0
+    (loop [indx -1
            recurcion 0
-           input-messages (vec (take recurcion-level (cycle '([]))))]
+           input-messages (vec (take recurcion-level (cycle '([]))))] 
       ;; (prn "INDEX: " input-messages)
-      (if-not (and (= len indx)
-                   (= recurcion recurcion-level)
-                   ;; -1 ?
-                   )
-        (recur (if (= len indx)
-                 0 (inc indx))
-               (if (= len indx)
-                 (inc recurcion) recurcion)
-               ;; Real parameter parsing starts here
-               (loop [param-keys (keys (second instr))
-                      params []]
-                 (if (empty? param-keys)
-                   (if (= 0 recurcion-level)
-                     (conj input-messages (apply (first instr) params))
-                     (assoc input-messages recurcion
-                            (conj (nth input-messages recurcion)
-                                  (apply (first instr) params)))) 
-                   (let [param-name (get (second instr) (first param-keys))
-                         param-value (let [pmv (get env' param-name)]
-                                       (if-not (seqable? pmv)
-                                         pmv
-                                         (if (seqable? (first pmv))
-                                           (nth pmv (mod recurcion (count pmv))) 
-                                           pmv)))
-                         param-value (cond
-                                       (= :dur param-name) dur
-                                       (= :freq param-name) (let [freq param-value]
-                                                              ;; No frequency should be 0
-                                                              ;; use default instead.
-                                                              (if (some zero? freq)
-                                                                ;; replace all zeros
-                                                                (reduce #(conj %1 (if (zero? %2) (:freq (nth instr 3)) %2)) [] freq)
-                                                                freq))
-                                       :else param-value ;;(get env' param-name)
-                                       )
-                         value (if (number? param-value)
-                                 param-value
-                                 (nth param-value (mod indx (count param-value))))]
-                     (recur
-                      (rest param-keys)
-                      (into params [param-name value]))))))
-        (assoc env :input-messages input-messages :dur (if (:uncycle? env)
-                                                         (:dur env)
-                                                         (fill-the-bar (:dur env) (:len env))))))))
+      (let [recurcion (if (= (dec len) indx)
+                        (inc recurcion) recurcion)
+            indx (if (= (dec len) indx)
+                   0 (inc indx))]
+        (if-not ;;(= len indx)
+            (>= recurcion (max recurcion-level 1))
+          ;; -1 ?          
+          (recur indx
+                 recurcion
+                 ;; Real parameter parsing starts here
+                 (loop [param-keys (keys (second instr))
+                        params []]
+                   (if (empty? param-keys)
+                     (if (= 0 recurcion-level)
+                       (conj input-messages (apply (first instr) params))
+                       (assoc input-messages recurcion
+                              (conj (nth input-messages recurcion)
+                                    (apply (first instr) params)))) 
+                     (let [param-name (get (second instr) (first param-keys))
+                           param-value (let [pmv (get env' param-name)]
+                                         (if-not (seqable? pmv)
+                                           pmv
+                                           (if (seqable? (first pmv))
+                                             (nth pmv (mod recurcion (count pmv))) 
+                                             pmv)))
+                           param-value (cond
+                                         (= :dur param-name) dur
+                                         (= :freq param-name) (let [freq param-value]
+                                                                ;; No frequency should be 0
+                                                                ;; use default instead.
+                                                                (if (some zero? freq)
+                                                                  ;; replace all zeros
+                                                                  (reduce #(conj %1 (if (zero? %2) (:freq (nth instr 3)) %2)) [] freq)
+                                                                  freq))
+                                         :else param-value ;;(get env' param-name)
+                                         )
+                           value (if (number? param-value)
+                                   param-value
+                                   (nth param-value (mod indx (count param-value))))]
+                       (recur
+                        (rest param-keys)
+                        (into params [param-name value]))))))
+          (assoc env :input-messages input-messages :dur (if (:uncycle? env)
+                                                           (:dur env)
+                                                           (fill-the-bar (:dur env) (:len env)))))))))
 
 
 ;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[3 5 3 5 3 5 3 5:] 2 16) (panaeolus.instruments.tr808/low_conga))
-#_(ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[10 20] 1 8) (panaeolus.instruments.synths/sweet :amp [[-1 -2 -3]
-                                                                                                                                [-4 -5 -6]
-                                                                                                                                ]))
+
+#_(-> (:input-messages (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[10 20] 1 8) (panaeolus.instruments.synths/sweet :amp [[-1 -2 -3]
+                                                                                                                                                     [-4 -5 -6] ]
+                                                                                                                                               :freq [[65.40639132514966 130.8127826502993 293.6647679174076 698.4564628660078]])))
+      ;; first count
+      )
+
+
 #_(let [v [[1] [2]]]
     (assoc v 0 (conj (nth v 0) "a")))
 ;; TODO make test if positiv :dur count equals to count of input-messages
