@@ -19,13 +19,6 @@
             (inc (quot (dec summed-durs) bar-length)))
          summed-durs))))
 
-;; input-messages (if (string? input-messages)
-;;                  [input-messages]
-;;                  (if (or (vector? (first input-messages))
-;;                          (list? (first input-messages)))
-;;                    (first input-messages)
-;;                    input-messages))
-
 
 (defn- create-event-queue [durations input-messages]
   (let [input-messages (if (string? input-messages)

@@ -72,13 +72,20 @@
    :p12 {:lpf 1.1} 
    :p13 {:filt 0}})
 
+(definstrument "wobbly"
+  (fs/slurp "src/panaeolus/csound/orchestra/synth/wobbly.orc")
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:freq 100}
+   :p6 {:div 2}})
+
 ;; (demo (tb303 :freq 40 :lpf 1.4 :res 20 :att 0.01 :dec 0.1 :sus 0.01 :wave 4 :filt 1 :dist 2  :amp -1 0.5) 0.9)
 
 ;; (demo (scan :freq 300 :fx (panaeolus.fx/bp :band 100) :amp -6))
 
 ;; (demo (asfm  :freq 100 :cutoff 1200 :amp 0 :mod 2.9 :fx [(lofi :bits 4) (freeverb :sr 9000)] :index 2))
 
-;; (demo (sweet :freq 101 :amp -20 :fx (freeverb :sr 90000)))
+;; (demo (wobbly :div 2 :amp -12) 1)
 
 ;; (forever (hammer :freq 60 :fx (flanger :depth 0.01 :rate 20)))
 

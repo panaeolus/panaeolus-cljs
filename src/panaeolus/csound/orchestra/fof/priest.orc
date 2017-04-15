@@ -35,7 +35,8 @@ instr 1
   a10 linen a51, p7, p3, (p3*.1)			;amp envelope
   a16 fof a10,ifreq+a2,  428*(p8/100), k2, 200, .003, .017, .005, 30, giSine,giSigmoid, ifreq, 0, 1
   a7 = (a11 + a12 + a13 + a14 + a15 + a16) * iamp
-  asig = a7/100
+  aenv    linseg 0, 0.02, 1, p3 - 0.05, 1, 0.02, 0, 0.01, 0
+  asig = a7/100*aenv
   outs  a7, a7
 endin
 
