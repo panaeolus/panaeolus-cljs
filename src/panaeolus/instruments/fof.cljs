@@ -13,6 +13,6 @@
    :p5 {:freq 200}
    :p6 {:morph 1}
    :p7 {:att 0.1}
-   :p8 {:format 70}}  )
+   :p8 {:format 70}})
 
 ;; (demo (priest :freq 100) 1)
