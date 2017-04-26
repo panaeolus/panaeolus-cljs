@@ -1,4 +1,4 @@
-(ns test.orchestra_parser
+(ns panaeolus.orchestra-parser-tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             [panaeolus.orchestra-parser :refer [generate-p-keywords
                                                 fold-hashmap]]))

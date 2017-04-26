@@ -1,4 +1,4 @@
-(ns test.broker 
+(ns panaeolus.broker-tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             [panaeolus.broker :refer [calc-mod-div
                                       create-event-queue

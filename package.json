@@ -4,12 +4,13 @@
   "author": "Hlödver Sigurdsson",
   "license": "GPL-3.0",
   "scripts": {
-    "repl": "cljs-boot lumo -K -n 5555"
+    "repl": "cljs-boot lumo -K -n 5555",
+    "test": "cljs-boot lumo -c src test/panaeolus/test_runner.cljs"
   },
-  "main": "panaeolus.core",
+  "main": "panaeolus.all",
   "cljs": {
     "source-paths": [
-      "src"
+      "src", "test"
     ],
     "dependencies": {
       "andare": "0.5.0",
@@ -17,7 +18,7 @@
     }
   },
   "dependencies": {
-    "csound-api": "0.10.1", 
+    "csound-api": "0.10.3", 
     "require-rebuild": "latest",
     "lumo-cljs": "latest",
     "expand-home-dir": "0.0.3",

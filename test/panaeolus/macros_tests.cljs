@@ -1,4 +1,4 @@
-(ns test.macros
+(ns panaeolus.macros-tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             ;;[panaeolus.macros :refer [seq]]
             ))
