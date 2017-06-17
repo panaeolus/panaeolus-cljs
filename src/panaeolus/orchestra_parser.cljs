@@ -3,7 +3,12 @@
             [clojure.string :as string]
             [macchiato.fs :as fs]))
 
-;; (insert-zak-and-fx (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc"))
+#_(insert-zak-and-fx (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc")
+                     (panaeolus.fx/lofi))
+#_(println (insert-zak-and-fx
+            (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc")
+            (panaeolus.fx/freeverb) 
+            ))
 
 (def csound-instrument-map
   "Map instr-name to instr-number"
@@ -18,47 +23,66 @@
           (mapv string/trim (string/split audio-vars #","))
           (recur (inc indx) (str audio-vars char)))))))
 
-(defn- insert-zak-and-fx [instr & fx]
+(defn- insert-zak-and-fx [instr env]
   (let [[aL aR] (determine-outs instr)
         zak-system (str "chnmix " aL ",\"OutL\" \n"
                         "chnmix " aR ",\"OutR\" \n")
-        fx (if-not (or (nil? fx) (empty? fx))
-             (if (fn? (first fx))
-               ((first fx) aL aR)
-               (apply str (map #(% aL aR) (first fx))))
-             "")
-        fx-and-zak (str  fx "\n" zak-system)]
-    (string/replace instr #"\bout?.*" fx-and-zak)))
+        fx (:fx env)
+        [fx env] (if-not (nil? fx)
+                   (loop [fx-v (if (fn? fx)
+                                 [fx] fx)
+                          fx-str ""
+                          env (assoc env :param-cnt (+ 2 (:param-cnt env)))]
+                     (if (empty? fx-v)
+                       [fx-str (assoc env :param-cnt (- (:param-cnt env) 2))]
+                       (let [cur-fx (first fx-v)
+                             [fx-str-res env-res] (cur-fx aL aR (:param-cnt env))]
+                         (recur (rest fx-v)
+                                (str fx-str fx-str-res)
+                                (merge env env-res))))) 
+                   ["" env])
+        fx-and-zak (str fx "\n" zak-system)]
+    [(string/replace instr #"\bout?.*" fx-and-zak) env]))
 
 (defn- replace-instr-number [instr num]
-  (clojure.string/replace instr #"instr\s+[0-9]*" (str "instr " num)))
+  (string/replace instr #"instr\s+[0-9]*" (str "instr " num)))
 
 (defn compile-csound-instrument
   "name is the function name for the instr
    instr is the csound slurp of the instr definition."
-  [name instr fx & pat-name]
-  (let [name (if (first pat-name) 
-               (str name (first pat-name))
-               name)
-        instr-number (or (get @csound-instrument-map name) 
-                         (->> @csound-instrument-map
+  [name instr env]
+  (let [name (if-let [pat-name (:pattern-name env)] 
+               (str name pat-name)
+               name)] 
+    (if (contains? @csound-instrument-map name)
+      (if (not= (str (:fx env)) (get @csound-instrument-map (str name "-fx")))
+        (let [instr-number (get @csound-instrument-map name)
+              instr-string (replace-instr-number instr instr-number)
+              [instr-string env] (insert-zak-and-fx instr-string env)] 
+          (.CompileOrc csound Csound instr-string)
+          (swap! csound-instrument-map assoc (str name "-fx") (str (:fx env)))
+          [instr-number env])
+        [(get @csound-instrument-map name) env])
+      (let [instr-number (->> @csound-instrument-map
                               vals
                               (apply max)
-                              inc))
-        instr-string (replace-instr-number instr instr-number)
-        instr-string (insert-zak-and-fx instr-string fx)]
-    (.CompileOrc csound Csound instr-string)
-    (swap! csound-instrument-map assoc name instr-number)
-    instr-number))
+                              inc)
+            instr-string (replace-instr-number instr instr-number)
+            [instr-string env] (insert-zak-and-fx instr-string env)]
+        (.CompileOrc csound Csound instr-string)
+        (swap! csound-instrument-map assoc name instr-number (str name "-fx") (str (:fx env)))
+        [instr-number env]))))
 
-;;(compile-csound-instrument "a" [] (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc"))
+;; (compile-csound-instrument "a" (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc") [])
 
 (defn generate-p-keywords [p-count]
-  (map #(keyword (str "p" %)) (range 3 (+ 3 p-count))))
+  (map #(keyword (str "p" %)) (range 3 (+ p-count 3))))
 
+;; (generate-p-keywords 7)
 ;; Used by definst in macros
 (defn fold-hashmap [h-map]
-  (reduce-kv #(assoc %1 %2 (first (keys %3))) {} h-map))
+  (reduce-kv #(assoc %1 %2 (if (vector? %3)
+                             %3 [(first (keys %3))])) {} h-map))
 
 ;; Todo, create test for this
 (defn fill-the-bar [v len]
@@ -80,7 +104,7 @@
     (if (empty? params)
       recurcion-level
       (let [param (first params)
-            val (or (param env) (param (nth instr 2))
+            val (or (get-in env param) (get-in (nth instr 2) param)
                     (do (prn "Warning, bad default in determine-meta-recurcion") 0))]
         (recur (rest params)
                (if-not (seqable? val)
@@ -94,7 +118,7 @@
 ;; the duration between events.
 
 (defn ast-input-messages-builder [env instr]
-  (let [
+  (let [;;_ (prn "env: " env)
         ;; instr (if (fn? (first instr))
         ;;         [instr] instr)
         ;; instr-count (count instr)
@@ -114,7 +138,6 @@
               ;;(+ (count dur) (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
               )
         ;; _ (prn (:len env) len)
-        
         dur (if-let [xtim (:xtim env)]
               (if (seqable? xtim)
                 (take (count dur) (cycle xtim))
@@ -144,7 +167,7 @@
                         params []]
                    (if (empty? param-keys)
                      (if (= 0 recurcion-level)
-                       (conj input-messages (apply (first instr) params))
+                       (do  (conj input-messages (apply (first instr) params)))
                        (assoc input-messages recurcion
                               (conj (nth input-messages recurcion)
                                     (apply (first instr) params)))) 
@@ -177,16 +200,9 @@
                                                            (fill-the-bar (:dur env) (:len env)))))))))
 
 
-;; (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[3 5 3 5 3 5 3 5:] 2 16) (panaeolus.instruments.tr808/low_conga))
-
-#_(-> (:input-messages (ast-input-messages-builder (panaeolus.algo.seq/seq {:uncycle? false} '[10 20] 1 8) (panaeolus.instruments.synths/sweet :amp [[-1 -2 -3]
-                                                                                                                                                     [-4 -5 -6] ]
-                                                                                                                                               :freq [[65.40639132514966 130.8127826502993 293.6647679174076 698.4564628660078]])))
-      ;; first count
-      )
-
-
-#_(let [v [[1] [2]]]
-    (assoc v 0 (conj (nth v 0) "a")))
-;; TODO make test if positiv :dur count equals to count of input-messages
-
+#_(apply (first (panaeolus.instruments.tr808/low_conga :fx (panaeolus.fx/lofi)
+                                                       )
+                ) [:dur 0.5 :amp -12 :freq 100])
+#_(ast-input-messages-builder (panaeolus.algo.seq/seq {} '[1 2 3 4] 2 4) ;;(panaeolus.instruments.fof/priest)
+                              (panaeolus.instruments.tr808/low_conga)
+                              )

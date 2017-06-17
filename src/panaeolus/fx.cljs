@@ -1,6 +1,8 @@
 (ns panaeolus.fx
   (:import [goog.string format]))
 
+(defn param-key [param-num]
+  (keyword (str "p" param-num)))
 
 (defn freeverb
   [& {:keys [room damp sr]
@@ -10,11 +12,19 @@
          "kRvbEnv expsegr 1, p3, 1, p3*2, .01\n"
          aL " *= kRvbEnv\n" aR " *= kRvbEnv\n")))
 
-(defn lofi [& {:keys [bits fold]
-               :or {bits 6 fold 0.1}}]
-  (fn [aL aR]
-    (format"\n%s, %s LoFiS  %s, %s, %f, %f\n" aL aR aL aR bits fold)))
-
+(defn lofi [& {:keys [bits fold] :as env}]
+  (let [defaults {:bits 6 :fold 0.1}
+        env (merge defaults env)]
+    ;; (prn env)
+    (fn [aL aR param-cnt]
+      (let [param-1 (inc param-cnt)
+            param-2 (inc param-1)]
+        [(format"\n%s, %s LoFiS  %s, %s, p%s, p%s\n" aL aR aL aR param-1 param-2)
+         {(param-key param-1) [:lofi :bits]
+          (param-key param-2) [:lofi :fold]
+          :lofi env
+          :param-cnt param-2}]))))
+;; (lofi :bits 20)
 
 (defn flanger [& {:keys [rate depth delay fback wet shape]
                   :or {rate 5.15 depth 0.001

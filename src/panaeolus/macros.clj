@@ -36,7 +36,8 @@
 
 
 (defmacro definstrument [instr-name csound-string p-fields] 
-  `(let [keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
+  `(let [keys-vector# (into [(symbol "dur") (symbol "amp")
+                             (symbol "freq") (symbol "param-lookup-map-fx")] 
                             (->> ~p-fields
                                  vals
                                  (map keys)
@@ -44,36 +45,44 @@
          keys-vector# (-> keys-vector# distinct) 
          or-map# (merge {:dur 0.5}
                         (apply merge (vals ~p-fields)))
+         initial-param-cnt# (count (keys or-map#))
          ;; Sends warning for wrong argument count, strange
          instr-number# (panaeolus.orchestra-parser/compile-csound-instrument
-                        ~instr-name ~csound-string nil)
+                        ~instr-name ~csound-string {:param-cnt initial-param-cnt#})
          param-lookup-map# (panaeolus.orchestra-parser/fold-hashmap ~p-fields)]
      (defn ~(symbol instr-name) 
        [~(symbol "&") {~(symbol "keys") keys-vector#
                        :or or-map#
                        :as env#}]
-       [(fn [~(symbol "&") {~(symbol "keys") keys-vector#
-                            :as closure-env#}]
-          (let [p-count# (count (keys or-map#))
-                final-env# (merge or-map# env# closure-env#)]
-            (apply str "i " (or (:p1 final-env#) instr-number#) " 0"
-                   (for [param# (panaeolus.orchestra-parser/generate-p-keywords
-                                 p-count#)]
-                     (if-let [fun# (get-in ~p-fields [param# :fn])]
-                       (str " " (fun# final-env#))
-                       (str " " (-> param#
-                                    param-lookup-map#
-                                    final-env#)))))))
-        param-lookup-map#
-        ;; Final env for instrument
-        ;; are the two expressions the same?
-        (merge or-map# env#)
-        ;; Default param map
-        or-map#
-        ;; recompile-fn
-        (fn [] (panaeolus.orchestra-parser/compile-csound-instrument
-                ~instr-name ~csound-string (:fx env#) (:pattern-name env#)))
-        instr-number#])))
+       ;; recompile-fn
+       ;; now implicitly recompile on every instr call
+       (let [[instr-number# env#] (panaeolus.orchestra-parser/compile-csound-instrument
+                                   ~instr-name ~csound-string (assoc env# :param-cnt initial-param-cnt#))]
+         [(fn [~(symbol "&") {~(symbol "keys") keys-vector#
+                              :as closure-env#}]
+            (let [p-count# (:param-cnt env#)
+                  final-env# (merge or-map# env# closure-env#)
+                  param-lookup-map# (merge param-lookup-map# env#)]
+              (str "i " (or (:p1 final-env#) instr-number#) " 0 "
+                   (doall
+                    (clojure.string/join " "
+                                         (for [param# (panaeolus.orchestra-parser/generate-p-keywords
+                                                       p-count#)]
+                                           (let [param-val# (get-in final-env# (-> param# param-lookup-map#))]
+                                             (if (fn? param-val#)
+                                               (param-val#)
+                                               param-val#))))))))
+          param-lookup-map#
+          ;; Final env for instrument
+          ;; are the two expressions the same?
+          (merge or-map# env#)
+          ;; Default param map
+          or-map#
+          ;; recompile-fn
+          ;; (panaeolus.orchestra-parser/compile-csound-instrument ~instr-name ~csound-string (:fx env#) (:pattern-name env#))
+          ;; NOOP
+          (fn [] )
+          instr-number#]))))
 
 (defmacro demo [instr & dur]
   `(let [instr# ~instr

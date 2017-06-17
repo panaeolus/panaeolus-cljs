@@ -7,7 +7,7 @@
 
 (def low_conga_slurp
   (fs/slurp "src/panaeolus/csound/orchestra/tr808/low_conga.orc"))
-
+;;(low_conga)
 (definstrument "low_conga"
   low_conga_slurp
   {:p3 {:dur 1}

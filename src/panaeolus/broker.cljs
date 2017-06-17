@@ -79,8 +79,8 @@
                           (create-event-queue dur input-messages))
           ;; initial-queue (create-event-queue dur input-messages)
           initial-mod-div (calc-mod-div meter dur)
-          initial-fx (:fx env)
-          _ ((:recompile-fn env))]
+          ;;initial-fx (:fx env)
+          ]
       (swap! pattern-registry assoc pattern-name user-input-channel)
       (go-loop [index 0
                 a-index 0
@@ -93,9 +93,10 @@
                         (first initial-queue))
                 queue-buffer initial-queue
                 new-user-data nil
-                last-tick  (.GetCurrentTimeSamples csound Csound) ;; (.-beat Abletonlink)
+                last-tick  (.GetCurrentTimeSamples csound Csound) 
                 stop? false
-                last-fx initial-fx]
+                ;;last-fx initial-fx
+                ]
         (let [{:keys [pause kill stop? dur input-messages meter fx len]
                :or {;;input-messages input-messages meter meter stop? stop?
                     len len}}  new-user-data
@@ -108,15 +109,15 @@
                                                    (create-event-queue dur input-messages))
                                                  (calc-mod-div (or len meter) dur)]
                                                 [queue-buffer mod-div-buffer]))
-              _ (when (and (not kill)
-                           new-user-data
-                           (or (not= last-fx fx) (nil? fx))
-                           ;;(fn? (:recompile-fn new-user-data))
-                           ) 
-                  (println "recompileing fx-changes...")
-                  ;; (prn new-user-data)
-                  ((:recompile-fn new-user-data))
-                  )
+              ;; _ (when (and (not kill)
+              ;;              new-user-data
+              ;;              (or (not= last-fx fx) (nil? fx))
+              ;;              ;;(fn? (:recompile-fn new-user-data))
+              ;;              ) 
+              ;;     (println "recompileing fx-changes...")
+              ;;     ;; (prn new-user-data)
+              ;;     ((:recompile-fn new-user-data))
+              ;;     )
               ;;_ (when new-user-data (prn "END OF CALC"))
               new-user-data nil]
           ;; (println (str "Mod-div: "  mod-div (count queue-buffer)))
@@ -145,8 +146,7 @@
                          queue-buffer
                          (async/poll! user-input-channel)
                          (.GetCurrentTimeSamples csound Csound)
-                         stop?
-                         fx)))
+                         stop?)))
               (recur 0
                      (inc a-index)
                      (inc loop-cnt)
@@ -162,8 +162,7 @@
                        (<! user-input-channel)
                        (async/poll! user-input-channel))
                      (.GetCurrentTimeSamples csound Csound)
-                     false
-                     fx))))))))
+                     false))))))))
 
 
 (defn pat [pattern-name instr env]
