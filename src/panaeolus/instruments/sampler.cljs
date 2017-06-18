@@ -64,56 +64,8 @@
       (get bnk (mod freq (count bnk)))
       (get bnk (mod (- freq midi-min) (count bnk))))))
 
-#_(defn sampler-fn [env]
-    ;; (prn env)
-    (if (:bank env)
-      (loop [bank (let [b (:bank env)]
-                    (if (or (list? b) (vector? b))
-                      b [b]))
-             v []]
-        (if (empty? bank)
-          v
-          (recur
-           (rest bank)
-           (conj v
-                 (case (first bank)
-                   ("stl-kick" :stl-kick) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                              0 (get all-samples :stl_kicks))
-                   ("stl-perc" :stl-perc) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                              0 (get all-samples :stl_percs))
-                   ("stl-bass" :stl-bass) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                              0 (get all-samples :stl_bass))
-                   ("stl-snare" :stl-snare) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                                0 (get all-samples :stl_snares))
-                   ("stl-rise" :stl-rise) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                              0 (get all-samples :stl_rise))
-                   ("stl-texture" :stl-texture) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                                    0 (get all-samples :stl_textures))
-                   ("stl-clap" :stl-clap) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                              0 (get all-samples :stl_clap))
-                   ("stl-hat" :stl-hat) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                            0 (get all-samples :stl_hats))
-                   ("stl-fx" :stl-fx) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                          0 (get all-samples :stl_fx))
-                   ("pan" :pan) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                    0 (get all-samples :pan))
-                   ("jb" :jb) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                  0 (get all-samples :jb))
-                   ("xx" :xx) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                  12 (get all-samples :xx))
-                   ("jx" :jx) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                  12 (get all-samples :jx))
-                   ("jv" :jv) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                  35 (get all-samples :jvgabba))
-                   ("pulse" :pulse) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                        36 (get all-samples :pulse))
-                   ("rash" :rash) (freq-to-sample-num (or (:midi env) (:freq env))
-                                                      36 (get all-samples :rash)) 
-                   (throw (js/Error. (str "The sample bank: " bank " does not exist"))))))))
-      (max 1000 (:sample env))))
-
-
 (defn sampler-fn [env]
+  ;; (prn "ENV: " env)  
   (if (:bank env)
     (loop [bank (let [b (:bank env)]
                   (if (or (list? b) (vector? b))
@@ -127,19 +79,20 @@
          (into total-bank
                (case (first bank)
                  ("stl-kick" :stl-kick) (get all-samples :stl_kicks)
-                 ("stl-perc" :stl-perc) (get all-samples :stl_percs)
-                 ("stl-bass" :stl-bass) (get all-samples :stl_bass)
-                 ("stl-snare" :stl-snare) (get all-samples :stl_snares)
-                 ("stl-rise" :stl-rise) (get all-samples :stl_rise)
-                 ("stl-texture" :stl-texture) (get all-samples :stl_textures)
-                 ("stl-clap" :stl-clap) (get all-samples :stl_clap)
-                 ("stl-hat" :stl-hat) (get all-samples :stl_hats)
-                 ("stl-fx" :stl-fx) (get all-samples :stl_fx)
-                 ("pan" :pan) (get all-samples :pan)
-                 ("jb" :jb) (get all-samples :jb)
+                 ;; ("stl-perc" :stl-perc) (get all-samples :stl_percs)
+                 ;; ("stl-bass" :stl-bass) (get all-samples :stl_bass)
+                 ;; ("stl-snare" :stl-snare) (get all-samples :stl_snares)
+                 ;; ("stl-rise" :stl-rise) (get all-samples :stl_rise)
+                 ;; ("stl-texture" :stl-texture) (get all-samples :stl_textures)
+                 ;; ("stl-clap" :stl-clap) (get all-samples :stl_clap)
+                 ;; ("stl-hat" :stl-hat) (get all-samples :stl_hats)
+                 ;; ("stl-fx" :stl-fx) (get all-samples :stl_fx)
+                 ;; ("pan" :pan) (get all-samples :pan)
+                 ;; ("jb" :jb) (get all-samples :jb)
+                 ;; ("jx" :jx) (get all-samples :jx)
+                 ;; ("jv" :jv) (get all-samples :jvgabba)
+                 
                  ;; ("xx" :xx) (get all-samples :xx)
-                 ("jx" :jx) (get all-samples :jx)
-                 ("jv" :jv) (get all-samples :jvgabba)
                  ;; ("pulse" :pulse) (get all-samples :pulse)
                  ;; ("rash" :rash) (get all-samples :rash) 
                  (throw (js/Error. (str "The sample bank: " bank " does not exist"))))))))
@@ -153,13 +106,13 @@
    :p6 {:freq 1000 :fn panaeolus.instruments.sampler/sampler-fn}
    :p7 {:loop 0}})
 
-(definstrument "sampler2"
-  (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")
-  {:p3 {:dur 1}
-   :p4 {:amp -12}
-   :p5 {:speed 1}
-   :p6 {:freq 1000 :fn panaeolus.instruments.sampler/sampler-fn}
-   :p7 {:loop 0}})
+;; (definstrument "sampler2"
+;;   (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")
+;;   {:p3 {:dur 1}
+;;    :p4 {:amp -12}
+;;    :p5 {:speed 1}
+;;    :p6 {:freq panaeolus.instruments.sampler/sampler-fn}
+;;    :p7 {:loop 0}})
 
 (definstrument "nsampler"
   (fs/slurp "src/panaeolus/csound/orchestra/sampler/nsampler.orc")
@@ -178,10 +131,10 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:speed 1}
-   :p6 {:freq 0 :fn (fn [env]
-                      (let [tbl-num-v (get all-samples :stl_kicks)]
-                        (nth tbl-num-v
-                             (mod (:freq env) (count tbl-num-v)))))}
+   :p6 {:freq (fn [env]
+                (let [tbl-num-v (get all-samples :stl_kicks)]
+                  (nth tbl-num-v
+                       (mod (:freq env) (count tbl-num-v)))))}
    :p7 {:loop 0}})
 
 
@@ -191,10 +144,10 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}
-   :p6 {:sample 0 :fn (fn [env]
-                        (let [tbl-num-v (get all-samples :stl_synths)]
-                          (nth tbl-num-v
-                               (mod (:sample env) (count tbl-num-v)))))}
+   :p6 {:sample (fn [env]
+                  (let [tbl-num-v (get all-samples :stl_synths)]
+                    (nth tbl-num-v
+                         (mod (:sample env) (count tbl-num-v)))))}
    :p7 {:samplefreq 130.82}})
 
 (definstrument "stl-bass"
@@ -203,10 +156,10 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}
-   :p6 {:sample 0 :fn (fn [env]
-                        (let [tbl-num-v (get all-samples :stl_bass)]
-                          (nth tbl-num-v
-                               (mod (:sample env) (count tbl-num-v)))))}
+   :p6 {:sample (fn [env]
+                  (let [tbl-num-v (get all-samples :stl_bass)]
+                    (nth tbl-num-v
+                         (mod (:sample env) (count tbl-num-v)))))}
    :p7 {:samplefreq 32.703}})
 
 (comment 

@@ -3,7 +3,7 @@
    panaeolus.algo.seq
    panaeolus.algo.seq-algo
    panaeolus.engine
-   [panaeolus.broker :refer [pat]] 
+   panaeolus.broker 
    panaeolus.fx
    panaeolus.algo.control
    panaeolus.orchestra-parser
@@ -16,7 +16,7 @@
    panaeolus.instruments.perc
    panaeolus.instruments.plucked
    panaeolus.instruments.oscil-bank)
-  (:require-macros [panaeolus.macros :refer [ demo -> forever]]))
+  (:require-macros [panaeolus.macros :refer [ demo -> forever P]]))
 
 
 (do

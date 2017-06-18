@@ -81,6 +81,8 @@
           initial-mod-div (calc-mod-div meter dur)
           ;;initial-fx (:fx env)
           ]
+      (prn "PATLOOPQUEENV" env)
+      ((get env :recompile-fn))
       (swap! pattern-registry assoc pattern-name user-input-channel)
       (go-loop [index 0
                 a-index 0
@@ -109,16 +111,13 @@
                                                    (create-event-queue dur input-messages))
                                                  (calc-mod-div (or len meter) dur)]
                                                 [queue-buffer mod-div-buffer]))
-              ;; _ (when (and (not kill)
-              ;;              new-user-data
-              ;;              (or (not= last-fx fx) (nil? fx))
-              ;;              ;;(fn? (:recompile-fn new-user-data))
-              ;;              ) 
-              ;;     (println "recompileing fx-changes...")
-              ;;     ;; (prn new-user-data)
-              ;;     ((:recompile-fn new-user-data))
-              ;;     )
-              ;;_ (when new-user-data (prn "END OF CALC"))
+              _ (prn (keys new-user-data) "RECOMPFN" (:recompile-fn new-user-data))
+              _ (when-let [recompile-fn
+                           (get new-user-data :recompile-fn)]  
+                  (println "recompileing fx-changes...")
+                  ;; (prn new-user-data)
+                  (recompile-fn))
+              ;; _ (when new-user-data (prn "END OF CALC"))
               new-user-data nil]
           ;; (println (str "Mod-div: "  mod-div (count queue-buffer)))
           (if kill
@@ -164,16 +163,36 @@
                      (.GetCurrentTimeSamples csound Csound)
                      false))))))))
 
+#_(defmacro P [pattern-name instr env]
+    `(let [env# ~env         
+           instr# ~(into instr (:pattern-name pattern-name))
+           _# (prn "INSTR: " instr#)
+           instr# (if (vector? instr#)
+                    instr# (apply instr# (mapcat identity env#)))]
+       ;; (prn "A: " (assoc env# :pattern-name ~(name pattern-name)))
+       (when-not (or (empty? env#) (nil? env#))
+         (pattern-loop-queue (merge (nth instr# 2)
+                                    (panaeolus.orchestra-parser/ast-input-messages-builder
+                                     (assoc env# :pattern-name ~(name pattern-name))
+                                     instr#)
+                                    {:pattern-name ~(str pattern-name)})))))
 
-(defn pat [pattern-name instr env]
-  (let [instr (if (vector? instr)
-                instr (apply instr (mapcat identity env)))]
-    (when-not (or (empty? env) (nil? env))
-      (pattern-loop-queue (merge (nth instr 2)
-                                 (ast-input-messages-builder
-                                  (assoc env :pattern-name (name pattern-name)) instr)
-                                 {:pattern-name (str pattern-name)
-                                  :recompile-fn (nth instr 4)})))))
+#_(panaeolus.broker$macros/P :melody1 (panaeolus.instruments.tr808/low_conga)
+                             #_(seq [1 1 1 1:2] 2)
+
+                             (panaeolus.macros/-> (assoc 
+                                                   :dur [1 1 1 0.25 0.125 0.125 0.5])
+                                                  (assoc :kill true)
+                                                  ))
+
+#_(defn pat [pattern-name instr env]
+    (let [instr (if (vector? instr)
+                  instr (apply instr (mapcat identity env)))]
+      (when-not (or (empty? env) (nil? env))
+        (pattern-loop-queue (merge (nth instr 2)
+                                   (ast-input-messages-builder
+                                    (assoc env :pattern-name (name pattern-name)) instr)
+                                   {:pattern-name (str pattern-name)})))))
 
 (comment 
   (pat :melody1 (panaeolus.instruments.tr808/low_conga)

@@ -28,6 +28,7 @@
         zak-system (str "chnmix " aL ",\"OutL\" \n"
                         "chnmix " aR ",\"OutR\" \n")
         fx (:fx env)
+        ;; _ (prn "PARAM CNT: " (:param-cnt env))
         [fx env] (if-not (nil? fx)
                    (loop [fx-v (if (fn? fx)
                                  [fx] fx)
@@ -53,23 +54,28 @@
   [name instr env]
   (let [name (if-let [pat-name (:pattern-name env)] 
                (str name pat-name)
-               name)] 
+               name)]
+    ;; (prn "KEYS: " (keys env))
+    ;; (prn "FX ENV: " (:fx env))
     (if (contains? @csound-instrument-map name)
-      (if (not= (str (:fx env)) (get @csound-instrument-map (str name "-fx")))
-        (let [instr-number (get @csound-instrument-map name)
-              instr-string (replace-instr-number instr instr-number)
-              [instr-string env] (insert-zak-and-fx instr-string env)] 
-          (.CompileOrc csound Csound instr-string)
+      (let [instr-number (get @csound-instrument-map name)
+            instr-string (replace-instr-number instr instr-number)
+            [instr-string env] (insert-zak-and-fx instr-string env)
+            env (assoc env :recompile-fn (fn [] (.CompileOrc csound Csound instr-string)))]
+        (if (not= (str (:fx env)) (get-in @csound-instrument-map (str name "-fx"))) 
           (swap! csound-instrument-map assoc (str name "-fx") (str (:fx env)))
           [instr-number env])
-        [(get @csound-instrument-map name) env])
+        [instr-number env])
       (let [instr-number (->> @csound-instrument-map
                               vals
                               (apply max)
                               inc)
             instr-string (replace-instr-number instr instr-number)
-            [instr-string env] (insert-zak-and-fx instr-string env)]
-        (.CompileOrc csound Csound instr-string)
+            [instr-string env] (insert-zak-and-fx instr-string env)
+            env (assoc env :recompile-fn (fn [] (.CompileOrc csound Csound instr-string)))
+            ;;_ (prn "compiled-env2: " env)
+            ]
+        ;; (.CompileOrc csound Csound instr-string)
         (swap! csound-instrument-map assoc name instr-number (str name "-fx") (str (:fx env)))
         [instr-number env]))))
 
@@ -78,7 +84,7 @@
 (defn generate-p-keywords [p-count]
   (map #(keyword (str "p" %)) (range 3 (+ p-count 3))))
 
-;; (generate-p-keywords 7)
+;; (generate-p-keywords 8)
 ;; Used by definst in macros
 (defn fold-hashmap [h-map]
   (reduce-kv #(assoc %1 %2 (if (vector? %3)
@@ -97,13 +103,12 @@
                  (+ (Math/abs next) sum)
                  (inc indx)))))))
 
-
-(defn determine-meta-recurcion [env instr]
-  (loop [params (vals (nth instr 1))
+(defn determine-meta-recurcion [env param-list instr]
+  (loop [params param-list
          recurcion-level 0]
     (if (empty? params)
       recurcion-level
-      (let [param (first params)
+      (let [param ((first params) (nth instr 1))
             val (or (get-in env param) (get-in (nth instr 2) param)
                     (do (prn "Warning, bad default in determine-meta-recurcion") 0))]
         (recur (rest params)
@@ -118,7 +123,7 @@
 ;; the duration between events.
 
 (defn ast-input-messages-builder [env instr]
-  (let [;;_ (prn "env: " env)
+  (let [;;_ (prn "AST-ENV!: " env "AST-INSTR: " instr)
         ;; instr (if (fn? (first instr))
         ;;         [instr] instr)
         ;; instr-count (count instr)
@@ -146,13 +151,16 @@
         dur (if-let [xtratim (:xtratim env)]
               (map #(* % xtratim) dur)
               dur)
-        env' (merge (nth instr 2) env)
+        env' (merge (nth instr 1) (nth instr 2) env)
+        ;; _ (prn "ENV KOMMA: " env')
         instr-indicies (:instr-indicies env)
-        recurcion-level (determine-meta-recurcion env instr)]
+        param-list (generate-p-keywords (:param-cnt (nth instr 1)))
+        ;; _ (prn "PARAM LIST" param-list)
+        recurcion-level (determine-meta-recurcion env' param-list instr)]
     (loop [indx -1
            recurcion 0
            input-messages (vec (take recurcion-level (cycle '([]))))] 
-      ;; (prn "INDEX: " input-messages)
+      ;; (prn "INDEX: " input-messages "RL: " recurcion-level)
       (let [recurcion (if (= (dec len) indx)
                         (inc recurcion) recurcion)
             indx (if (= (dec len) indx)
@@ -163,46 +171,56 @@
           (recur indx
                  recurcion
                  ;; Real parameter parsing starts here
-                 (loop [param-keys (keys (second instr))
+                 (loop [param-keys param-list
                         params []]
+                   ;; (prn "PARAMS: " params)
                    (if (empty? param-keys)
                      (if (= 0 recurcion-level)
-                       (do  (conj input-messages (apply (first instr) params)))
+                       (conj input-messages (apply (first instr) params))
                        (assoc input-messages recurcion
                               (conj (nth input-messages recurcion)
                                     (apply (first instr) params)))) 
                      (let [param-name (get (second instr) (first param-keys))
-                           param-value (let [pmv (get env' param-name)]
+                           ;; _ (prn "KEYS: " (first param-keys) "ENV: " (second instr))
+                           param-value (let [pmv (get-in env' param-name)]
                                          (if-not (seqable? pmv)
                                            pmv
                                            (if (seqable? (first pmv))
                                              (nth pmv (mod recurcion (count pmv))) 
-                                             pmv)))
+                                             pmv))) 
                            param-value (cond
-                                         (= :dur param-name) dur
-                                         (= :freq param-name) (let [freq param-value]
-                                                                ;; No frequency should be 0
-                                                                ;; use default instead.
-                                                                (if (some zero? freq)
-                                                                  ;; replace all zeros
-                                                                  (reduce #(conj %1 (if (zero? %2) (:freq (nth instr 3)) %2)) [] freq)
-                                                                  freq))
+                                         (= [:dur] param-name) dur
+                                         (= [:freq] param-name) (let [freq param-value]
+                                                                  ;; No frequency should be 0
+                                                                  ;; use default instead.
+                                                                  (if (some zero? freq)
+                                                                    ;; replace all zeros
+                                                                    (reduce #(conj %1 (if (zero? %2)
+                                                                                        (:freq (nth instr 3)) %2)) [] freq)
+                                                                    freq))
                                          :else param-value ;;(get env' param-name)
                                          )
                            value (if (number? param-value)
                                    param-value
-                                   (nth param-value (mod indx (count param-value))))]
+                                   (if (seqable? param-value)
+                                     (nth param-value (mod indx (count param-value)))
+                                     param-value))
+                           ;; _ (prn "PARAMNAME: " param-name "PARAMVAL: " param-value " VALUE: " value)
+                           ]
                        (recur
                         (rest param-keys)
                         (into params [param-name value]))))))
-          (assoc env :input-messages input-messages :dur (if (:uncycle? env)
-                                                           (:dur env)
-                                                           (fill-the-bar (:dur env) (:len env)))))))))
+          (do ;;(prn input-messages)
+            (assoc env' :input-messages input-messages :dur (if (:uncycle? env')
+                                                              (:dur env')
+                                                              (fill-the-bar (:dur env') (:len env'))))))))))
 
 
-#_(apply (first (panaeolus.instruments.tr808/low_conga :fx (panaeolus.fx/lofi)
-                                                       )
-                ) [:dur 0.5 :amp -12 :freq 100])
+#_(apply (first (panaeolus.instruments.sampler/sampler :fx (panaeolus.fx/lofi)
+                                                       )) [:dur 0.5 :amp -12 :freq 100])
+
 #_(ast-input-messages-builder (panaeolus.algo.seq/seq {} '[1 2 3 4] 2 4) ;;(panaeolus.instruments.fof/priest)
-                              (panaeolus.instruments.tr808/low_conga)
+                              (panaeolus.instruments.sampler/sampler)
+                              ;; (panaeolus.instruments.fof/priest)
+                              ;; (panaeolus.instruments.tr808/low_conga)
                               )
