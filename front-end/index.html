@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="front-end-style.css">
+    <title>Hello World!</title>
+  </head>
+  <body>
+    <div id="editor">
+    </div>
+    <script src="front-end-script.js" type="text/javascript" charset="utf-8">
+    </script>
+    <script src="../node_modules/ace-builds/src/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/github");
+    editor.getSession().setMode("ace/mode/clojure");
+    </script>
+  </body>
+</html>

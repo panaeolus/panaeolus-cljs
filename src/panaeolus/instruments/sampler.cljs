@@ -65,38 +65,37 @@
       (get bnk (mod (- freq midi-min) (count bnk))))))
 
 (defn sampler-fn [env]
-  ;; (prn "ENV: " env)  
-  (if (:bank env)
-    (loop [bank (let [b (:bank env)]
+  (if (contains? env [:bank])
+    (loop [bank (let [b (get env [:bank])]
                   (if (or (list? b) (vector? b))
                     b [b]))
            total-bank []]
       (if (empty? bank)
-        (freq-to-sample-num (or (:midi env) (:freq env))
+        (freq-to-sample-num (or (get env [:midi]) (get env [:freq]))
                             0 total-bank)
         (recur
          (rest bank)
          (into total-bank
                (case (first bank)
                  ("stl-kick" :stl-kick) (get all-samples :stl_kicks)
-                 ;; ("stl-perc" :stl-perc) (get all-samples :stl_percs)
-                 ;; ("stl-bass" :stl-bass) (get all-samples :stl_bass)
-                 ;; ("stl-snare" :stl-snare) (get all-samples :stl_snares)
-                 ;; ("stl-rise" :stl-rise) (get all-samples :stl_rise)
-                 ;; ("stl-texture" :stl-texture) (get all-samples :stl_textures)
-                 ;; ("stl-clap" :stl-clap) (get all-samples :stl_clap)
-                 ;; ("stl-hat" :stl-hat) (get all-samples :stl_hats)
-                 ;; ("stl-fx" :stl-fx) (get all-samples :stl_fx)
-                 ;; ("pan" :pan) (get all-samples :pan)
-                 ;; ("jb" :jb) (get all-samples :jb)
-                 ;; ("jx" :jx) (get all-samples :jx)
-                 ;; ("jv" :jv) (get all-samples :jvgabba)
+                 ("stl-perc" :stl-perc) (get all-samples :stl_percs)
+                 ("stl-bass" :stl-bass) (get all-samples :stl_bass)
+                 ("stl-snare" :stl-snare) (get all-samples :stl_snares)
+                 ("stl-rise" :stl-rise) (get all-samples :stl_rise)
+                 ("stl-texture" :stl-texture) (get all-samples :stl_textures)
+                 ("stl-clap" :stl-clap) (get all-samples :stl_clap)
+                 ("stl-hat" :stl-hat) (get all-samples :stl_hats)
+                 ("stl-fx" :stl-fx) (get all-samples :stl_fx)
+                 ("pan" :pan) (get all-samples :pan)
+                 ("jb" :jb) (get all-samples :jb)
+                 ("jx" :jx) (get all-samples :jx)
+                 ("jv" :jv) (get all-samples :jvgabba)
                  
                  ;; ("xx" :xx) (get all-samples :xx)
                  ;; ("pulse" :pulse) (get all-samples :pulse)
                  ;; ("rash" :rash) (get all-samples :rash) 
                  (throw (js/Error. (str "The sample bank: " bank " does not exist"))))))))
-    (max 1000 (:sample env))))
+    (max 1000 (get env [:sample]))))
 
 (definstrument "sampler"
   (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")

@@ -84,7 +84,7 @@
 (defn generate-p-keywords [p-count]
   (map #(keyword (str "p" %)) (range 3 (+ p-count 3))))
 
-;; (generate-p-keywords 8)
+;; (generate-p-keywords 6)
 ;; Used by definst in macros
 (defn fold-hashmap [h-map]
   (reduce-kv #(assoc %1 %2 (if (vector? %3)
@@ -110,6 +110,7 @@
       recurcion-level
       (let [param ((first params) (nth instr 1))
             val (or (get-in env param) (get-in (nth instr 2) param)
+                    (get env param) (get (nth instr 2) param)
                     (do (prn "Warning, bad default in determine-meta-recurcion") 0))]
         (recur (rest params)
                (if-not (seqable? val)
@@ -123,11 +124,7 @@
 ;; the duration between events.
 
 (defn ast-input-messages-builder [env instr]
-  (let [;;_ (prn "AST-ENV!: " env "AST-INSTR: " instr)
-        ;; instr (if (fn? (first instr))
-        ;;         [instr] instr)
-        ;; instr-count (count instr)
-        dur' (if-let [d (:dur env)]
+  (let [dur' (if-let [d (:dur env)]
                (if (vector? d) d [d])
                ;; Should not be possible to reach this case.
                [1]) 
@@ -139,10 +136,7 @@
                         (remove #(or (zero? %) (neg? %)))
                         count)
                    (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
-                16)
-              ;;(+ (count dur) (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
-              )
-        ;; _ (prn (:len env) len)
+                16))
         dur (if-let [xtim (:xtim env)]
               (if (seqable? xtim)
                 (take (count dur) (cycle xtim))
@@ -152,22 +146,17 @@
               (map #(* % xtratim) dur)
               dur)
         env' (merge (nth instr 1) (nth instr 2) env)
-        ;; _ (prn "ENV KOMMA: " env')
         instr-indicies (:instr-indicies env)
         param-list (generate-p-keywords (:param-cnt (nth instr 1)))
-        ;; _ (prn "PARAM LIST" param-list)
         recurcion-level (determine-meta-recurcion env' param-list instr)]
     (loop [indx -1
            recurcion 0
            input-messages (vec (take recurcion-level (cycle '([]))))] 
-      ;; (prn "INDEX: " input-messages "RL: " recurcion-level)
       (let [recurcion (if (= (dec len) indx)
                         (inc recurcion) recurcion)
             indx (if (= (dec len) indx)
                    0 (inc indx))]
-        (if-not ;;(= len indx)
-            (>= recurcion (max recurcion-level 1))
-          ;; -1 ?          
+        (if-not (>= recurcion (max recurcion-level 1))
           (recur indx
                  recurcion
                  ;; Real parameter parsing starts here
@@ -182,7 +171,8 @@
                                     (apply (first instr) params)))) 
                      (let [param-name (get (second instr) (first param-keys))
                            ;; _ (prn "KEYS: " (first param-keys) "ENV: " (second instr))
-                           param-value (let [pmv (get-in env' param-name)]
+                           param-value (let [pmv (or (get-in env' param-name)
+                                                     (get env' param-name))]
                                          (if-not (seqable? pmv)
                                            pmv
                                            (if (seqable? (first pmv))

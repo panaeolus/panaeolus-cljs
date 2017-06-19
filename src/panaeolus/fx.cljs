@@ -30,7 +30,8 @@
         [(format"\n%s, %s LoFiS  %s, %s, p%s, p%s\n" aL aR aL aR param-1 param-2)
          {(param-key param-1) [:lofi :bits]
           (param-key param-2) [:lofi :fold]
-          :lofi env
+          [:lofi :bits] (:bits env)
+          [:lofi :fold] (:fold env)
           :param-cnt param-2}]))))
 ;; (lofi :bits 20)
 

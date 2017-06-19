@@ -1,4 +1,4 @@
-(ns panaeolus.macros$macros
+(ns panaeolus.macros
   (:require [lumo.repl :refer [get-current-ns]]
             [macchiato.fs :as fs]
             [cljs.env :as env]
@@ -44,7 +44,8 @@
          keys-vector# (-> keys-vector# distinct)
          or-map# (merge {:dur 0.5}
                         (apply merge (vals ~p-fields)))
-         initial-param-cnt# (count (keys or-map#))
+         ;; IMPROVE: this literally breaks multiple :fn fields in instruments
+         initial-param-cnt# (count (keys (dissoc or-map# :fn)))
          ;; Sends warning for wrong argument count, strange
          instr-number# (panaeolus.orchestra-parser/compile-csound-instrument
                         ~instr-name ~csound-string {:param-cnt initial-param-cnt#})
@@ -57,80 +58,50 @@
                        :as instr-env#}]
        ;; recompile-fn
        ;; now implicitly recompile on every instr call
-       (let [[instr-number# env#] (panaeolus.orchestra-parser/compile-csound-instrument
-                                   ~instr-name ~csound-string (assoc instr-env# :param-cnt initial-param-cnt#))
-             param-lookup-map# (merge param-lookup-map# (apply dissoc env# (keys instr-env#)))]
-         (prn env#)
-         [(fn [~(symbol "&") {~(symbol "keys") keys-vector#
-                              :as closure-env#}]
-            (let [p-count# (:param-cnt env#)
-                  env-vector-formatted# (reduce-kv (fn [x# y# z#]
-                                                     (assoc x# (if (vector? y#) y# [y#]) z#)) {}
-                                                   (merge or-map# env#))
-                  final-env# (merge env-vector-formatted# closure-env#)]
-              ;; (prn "FINAL ENV: " final-env# " env-formatted: " env-vector-formatted# "Param-lookup-map: " param-lookup-map#)
-              (str "i " instr-number# " 0 "
-                   (doall
-                    (clojure.string/join " "
-                                         (for [param# (panaeolus.orchestra-parser/generate-p-keywords
-                                                       p-count#)]
-                                           (if (contains? (param# ~p-fields) :fn)
-                                             ((get-in ~p-fields [param# :fn]) final-env#)
-                                             (get final-env# (get param-lookup-map# param#)))))))))
-          param-lookup-map#
-          ;; Final env for instrument
-          ;; are the two expressions the same?
-          (merge or-map# instr-env# {:recompile-fn (:recompile-fn env#)})
-          ;; Default param map
-          or-map#
-          instr-number#]))))
+       (fn [pattern-name#]
+         (let [[instr-number# env#] (panaeolus.orchestra-parser/compile-csound-instrument
+                                     ~instr-name ~csound-string
+                                     (assoc instr-env# :param-cnt initial-param-cnt#
+                                            :pattern-name pattern-name#))
+               param-lookup-map# (merge param-lookup-map# (apply dissoc env# (keys instr-env#)))]
+           
+           [(fn [~(symbol "&") {~(symbol "keys") keys-vector#
+                                :as closure-env#}]
+              (let [
+                  ;;;;;
+                    p-count# (:param-cnt env#)
+                    env-vector-formatted# (reduce-kv (fn [x# y# z#]
+                                                       (assoc x# (if (vector? y#) y# [y#]) z#)) {}
+                                                     (merge or-map# env#))
+                    final-env# (merge env-vector-formatted# closure-env#)]
+                (str "i " instr-number# " 0 "
+                     (clojure.string/join " " (for [param# (panaeolus.orchestra-parser/generate-p-keywords
+                                                            p-count#)]
+                                                (if (contains? (param# ~p-fields) :fn)
+                                                  ((get-in ~p-fields [param# :fn]) final-env#)
+                                                  (get final-env# (get param-lookup-map# param#))))))))
+            param-lookup-map#
+            ;; Final env for instrument
+            ;; are the two expressions the same?
+            (merge or-map# instr-env# {:recompile-fn (:recompile-fn env#)})
+            ;; Default param map
+            or-map#
+            instr-number#])))))
 
-;; (ns panaeolus.macros$macros)
-
-(defmacro P [pattern-name instr env]
-  (let [instr (apply conj (list :pattern-name pattern-name) (reverse instr))]
-    `(let [env# ~env
-           ;; _# (prn "INSTR: " instr)
-           instr# ~instr ;; 
-           ;; _# (prn "INSTR: " instr#)
-           instr# (if (vector? instr#)
-                    instr# (apply instr# (mapcat identity env#)))]
-       ;; (prn "A: " (nth instr# 2))
-       (when-not (or (empty? env#) (nil? env#))
-         (panaeolus.broker/pattern-loop-queue (merge (panaeolus.orchestra-parser/ast-input-messages-builder
-                                                      (assoc env# :pattern-name ~(name pattern-name))
-                                                      instr#)
-                                                     {:pattern-name ~(str pattern-name)
-                                                      :recompile-fn (:recompile-fn (nth instr# 2))}))))))
-
-#_(panaeolus.macros$macros/definstrument "mid_conga"
-    (fs/slurp "src/panaeolus/csound/orchestra/tr808/mid_conga.orc")
-    {:p3 {:dur 1}
-     :p4 {:amp -12}})
-
-
-#_(panaeolus.macros$macros/P :melody1 (panaeolus.instruments.tr808/low_conga :amp 10 :dur [0.2] ;;:fx (panaeolus.fx/lofi)
-                                                                             )
-                             #_(seq [1 1 1 1:2] 2)
-
-                             (panaeolus.macros/-> (assoc 
-                                                   :dur [1 1 1 0.25 0.125 0.125 0.5])
-                                                  (assoc :kill true)
-                                                  ))
 
 (defmacro demo [instr & dur]
-  `(let [instr# ~instr
+  `(let [instr# (~instr nil)
          dur# (or ~(first dur) 5)]
      ;; (prn "instr!!!!!: " ((first instr#) :dur dur#))
      ;; Always recompile demo
      ((:recompile-fn (nth instr# 2)))
      (if (or (vector? (first instr#))
              (list? (first instr#)))
-       (run! #(.InputMessage csound Csound %) (map #((first %) :dur dur#) instr#))
+       (run! #(.InputMessage csound Csound %) (map #((first %) [:dur] dur#) instr#))
        (.InputMessage csound Csound ((first instr#) :dur dur#)))))
 
 (defmacro forever [instr & dur]
-  `(let [instr# ~instr
+  `(let [instr# (~instr nil)
          dur# (or ~(first dur) 5)
          p1# (str (last instr#) ".001")]
      (if (or (vector? (first instr#))
@@ -139,10 +110,11 @@
        (if-let [instrnum# (some #{p1#} (:forever @pattern-registry))]
          (do
            (swap! pattern-registry assoc :forever (disj (:forever @pattern-registry) p1#))
-           (.InputMessage csound Csound ((first instr#) :dur dur# :p1 (str "-" instrnum#))))
+           (.InputMessage csound Csound ((first instr#) [:dur] dur# ;;[:p1] (str "-" instrnum#)
+                                         )))
          (do
            (swap! pattern-registry assoc :forever (conj (:forever @pattern-registry) p1#))
-           (.InputMessage csound Csound (let [f# ((first instr#) :dur (str "-" dur#) :p1 p1#)]
+           (.InputMessage csound Csound (let [f# ((first instr#) [:dur] (str "-" dur#))]
                                           f#)))))))
 
 (defmacro -> [& forms]

@@ -68,100 +68,118 @@
 
 (defn pattern-loop-queue [env]
   (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
-    (do (put! user-input-channel env)
-        nil)
-    (let [{:keys [dur pattern-name meter len input-messages]} env
-          user-input-channel (chan 0)
-          engine-poll-channel (chan)
-          initial-queue (if (or (not (string? input-messages))
-                                (not (string? (first input-messages))))
-                          (mapv #(create-event-queue dur %) input-messages)
-                          (create-event-queue dur input-messages))
-          ;; initial-queue (create-event-queue dur input-messages)
-          initial-mod-div (calc-mod-div meter dur)
-          ;;initial-fx (:fx env)
-          ]
-      (prn "PATLOOPQUEENV" env)
-      ((get env :recompile-fn))
-      (swap! pattern-registry assoc pattern-name user-input-channel)
-      (go-loop [index 0
-                a-index 0
-                loop-cnt 0
-                mod-div initial-mod-div
-                mod-div-buffer initial-mod-div 
-                len len ;;meter
-                queue (if (string? (first initial-queue))
-                        initial-queue
-                        (first initial-queue))
-                queue-buffer initial-queue
-                new-user-data nil
-                last-tick  (.GetCurrentTimeSamples csound Csound) 
-                stop? false
-                ;;last-fx initial-fx
+    (put! user-input-channel env)
+    (when-not (:kill env)
+      (let [{:keys [dur pattern-name meter len input-messages]} env
+            user-input-channel (chan 0)
+            engine-poll-channel (chan)
+            initial-queue (if (or (not (string? input-messages))
+                                  (not (string? (first input-messages))))
+                            (mapv #(create-event-queue dur %) input-messages)
+                            (create-event-queue dur input-messages))
+            ;; initial-queue (create-event-queue dur input-messages)
+            initial-mod-div (calc-mod-div meter dur)
+            initial-fx (:fx env)]
+        ((get env :recompile-fn))
+        (swap! pattern-registry assoc pattern-name user-input-channel)
+        (go-loop [index 0
+                  a-index 0
+                  loop-cnt 0
+                  mod-div initial-mod-div
+                  mod-div-buffer initial-mod-div 
+                  len len
+                  queue (if (string? (first initial-queue))
+                          initial-queue
+                          (first initial-queue))
+                  queue-buffer initial-queue
+                  new-user-data nil
+                  last-tick  (.GetCurrentTimeSamples csound Csound) 
+                  stop? false
+                  last-fx (or initial-fx "")]
+          (let [{:keys [pause kill stop? dur input-messages meter fx new-len]} new-user-data
+                [queue-buffer mod-div-buffer] (if kill
+                                                [nil nil]
+                                                (if dur
+                                                  [(if (or (not (string? input-messages))
+                                                           (not (string? (first input-messages))))
+                                                     (mapv #(create-event-queue dur %) input-messages)
+                                                     (create-event-queue dur input-messages))
+                                                   (calc-mod-div (or new-len len meter) dur)]
+                                                  [queue-buffer mod-div-buffer]))
+                _ (when (and (not kill)
+                             new-user-data
+                             (not= (str last-fx) (str fx))) 
+                    (println "recompileing fx-changes...")
+                    ;; (prn new-user-data)
+                    ((get new-user-data :recompile-fn)))
+                ;; _ (when new-user-data (prn "END OF CALC"))
+                ;; new-user-data nil
                 ]
-        (let [{:keys [pause kill stop? dur input-messages meter fx len]
-               :or {;;input-messages input-messages meter meter stop? stop?
-                    len len}}  new-user-data
-              [queue-buffer mod-div-buffer] (if kill
-                                              [nil nil]
-                                              (if dur
-                                                [(if (or (not (string? input-messages))
-                                                         (not (string? (first input-messages))))
-                                                   (mapv #(create-event-queue dur %) input-messages)
-                                                   (create-event-queue dur input-messages))
-                                                 (calc-mod-div (or len meter) dur)]
-                                                [queue-buffer mod-div-buffer]))
-              _ (prn (keys new-user-data) "RECOMPFN" (:recompile-fn new-user-data))
-              _ (when-let [recompile-fn
-                           (get new-user-data :recompile-fn)]  
-                  (println "recompileing fx-changes...")
-                  ;; (prn new-user-data)
-                  (recompile-fn))
-              ;; _ (when new-user-data (prn "END OF CALC"))
-              new-user-data nil]
-          ;; (println (str "Mod-div: "  mod-div (count queue-buffer)))
-          (if kill
-            (swap! pattern-registry dissoc pattern-name user-input-channel)
-            (if-let [next-event (peek queue)] 
-              (let [timestamp (calculate-timestamp
-                               last-tick
-                               mod-div (first next-event))
-                    wait-chn (chan)]
-                (loop []
-                  (if (<= timestamp (.GetCurrentTimeSamples csound Csound))
-                    (do (.InputMessage csound Csound (second next-event))
-                        (put! wait-chn true))
-                    (do (<! (timeout 1))
-                        (recur))))                
-                (when (<! wait-chn) 
-                  (recur (inc index)
-                         (inc a-index)
-                         loop-cnt
-                         mod-div
-                         mod-div-buffer
-                         ;; meter
-                         len
-                         (pop queue)
+            ;; (println (str "Mod-div: "  mod-div (count queue-buffer)))
+            (if kill
+              (swap! pattern-registry dissoc pattern-name user-input-channel)
+              (if-let [next-event (peek queue)] 
+                (let [timestamp (calculate-timestamp
+                                 last-tick
+                                 mod-div (first next-event))
+                      wait-chn (chan)]
+                  (loop []
+                    (if (<= timestamp (.GetCurrentTimeSamples csound Csound))
+                      (do (.InputMessage csound Csound (second next-event))
+                          (put! wait-chn true))
+                      (do (<! (timeout 1))
+                          (recur))))                
+                  (when (<! wait-chn) 
+                    (recur (inc index)
+                           (inc a-index)
+                           loop-cnt
+                           mod-div
+                           mod-div-buffer
+                           ;; meter
+                           (or new-len len)
+                           (pop queue)
+                           queue-buffer
+                           (async/poll! user-input-channel)
+                           (.GetCurrentTimeSamples csound Csound)
+                           stop?
+                           (if (and new-user-data
+                                    (not (:fx new-user-data)))
+                             ""
+                             (or fx last-fx)))))
+                (recur 0
+                       (inc a-index)
+                       (inc loop-cnt)
+                       mod-div-buffer 
+                       mod-div-buffer
+                       ;; meter
+                       (or new-len len)
+                       (if (string? (first queue-buffer))
                          queue-buffer
-                         (async/poll! user-input-channel)
-                         (.GetCurrentTimeSamples csound Csound)
-                         stop?)))
-              (recur 0
-                     (inc a-index)
-                     (inc loop-cnt)
-                     mod-div-buffer 
-                     mod-div-buffer
-                     ;; meter
-                     len
-                     (if (string? (first queue-buffer))
+                         (nth queue-buffer (mod loop-cnt (count queue-buffer))))
                        queue-buffer
-                       (nth queue-buffer (mod loop-cnt (count queue-buffer))))
-                     queue-buffer
-                     (if stop?
-                       (<! user-input-channel)
-                       (async/poll! user-input-channel))
-                     (.GetCurrentTimeSamples csound Csound)
-                     false))))))))
+                       (if stop?
+                         (<! user-input-channel)
+                         (async/poll! user-input-channel))
+                       (.GetCurrentTimeSamples csound Csound)
+                       false
+                       (if (and new-user-data
+                                (not (:fx new-user-data)))
+                         ""
+                         (or fx last-fx)))))))))))
+
+(defn P [pattern-name instr env]
+  (if (:kill env)
+    (panaeolus.broker/pattern-loop-queue
+     (assoc env :pattern-name (str pattern-name)))
+    (let [instr (instr pattern-name)
+          instr (if (vector? instr)
+                  instr (apply instr (mapcat identity env)))] 
+      (when-not (or (empty? env) (nil? env))
+        (panaeolus.broker/pattern-loop-queue
+         (merge (panaeolus.orchestra-parser/ast-input-messages-builder
+                 (assoc env :pattern-name (name pattern-name)) instr)
+                {:pattern-name (str pattern-name)
+                 :recompile-fn (:recompile-fn (nth instr 2))}))))))
 
 #_(defmacro P [pattern-name instr env]
     `(let [env# ~env         
