@@ -1,142 +1,72 @@
 (ns panaeolus.fx
-  (:import [goog.string format]))
+  (:import [goog.string format])
+  (:require-macros [panaeolus.macros :refer [define-fx]]))
 
-(defn param-key [param-num]
-  (keyword (str "p" param-num)))
 
-(defn freeverb
-  [& {:keys [room damp sr] :as env}]
-  (let [defaults {:room 0.9 :damp 0.35 :sr 44100}
-        env (merge defaults env)]
-    (fn [aL aR param-cnt]
-      (let [param-1 (inc param-cnt)
-            param-2 (inc param-1)
-            param-3 (inc param-2)]
-        [(str (format"\n%s, %s freeverb %s*1.5, %s*1.5, p%s, p%s, p%s\n" aL aR aL aR param-1 param-2 param-3)
-              "kRvbEnv expsegr 1, p3, 1, p3*2, .01\n"
-              aL " *= kRvbEnv\n" aR " *= kRvbEnv\n")
-         {(param-key param-1) [:freeverb :room]
-          (param-key param-2) [:freeverb :damp]
-          (param-key param-3) [:freeverb :sr]
-          :freeverb env
-          :param-cnt param-3}]))))
+(define-fx "freeverb"
+  (fn [aL aR room damp sr]
+    (str (format"\n%s, %s freeverb %s*1.5, %s*1.5, p%s, p%s, p%s\n" aL aR aL aR room damp sr)
+         "kRvbEnv expsegr 1, p3, 1, p3*2, .01\n"
+         aL " *= kRvbEnv\n" aR " *= kRvbEnv\n"))
+  [:room 0.9 :damp 0.35 :sr 44100])
 
-(defn lofi [& {:keys [bits fold] :as env}]
-  (let [defaults {:bits 6 :fold 0.1}
-        env (merge defaults env)]
-    (fn [aL aR param-cnt]
-      (let [param-1 (inc param-cnt)
-            param-2 (inc param-1)]
-        [(format"\n%s, %s LoFiS  %s, %s, p%s, p%s\n" aL aR aL aR param-1 param-2)
-         {(param-key param-1) [:lofi :bits]
-          (param-key param-2) [:lofi :fold]
-          [:lofi :bits] (:bits env)
-          [:lofi :fold] (:fold env)
-          :param-cnt param-2}]))))
-;; (lofi :bits 20)
+(define-fx "lofi"
+  (fn [aL aR bits fold]
+    (format"\n%s, %s LoFiS  %s, %s, %s, %s\n" aL aR aL aR bits fold))
+  [:bits 6 :fold 0.1])
 
-(defn flanger [& {:keys [rate depth delay fback wet shape] :as env}]
-  (let [defaults {:rate 5.15 :depth 0.001 :delay 0.001 :fback 0
-                  :wet 1 :shape 1}
-        env (merge defaults env)]
-    (fn [aL aR param-cnt]
-      (let [param-1 param-cnt
-            param-2 (inc param-1)
-            param-3 (inc param-2)
-            param-4 (inc param-3)
-            param-5 (inc param-4)
-            param-6 (inc param-5)]
-        [(format "\n %s, %s Flanger_stereo %s, %s, p%s, p%s, p%s, p%s, p%s, p%s \n"
-                 aL aR aL aR param-1 param-2 param-3 param-4 param-5 param-6)
-         {(param-key param-1) [:flanger :rate]
-          (param-key param-2) [:flanger :depth]
-          (param-key param-3) [:flanger :delay]
-          (param-key param-4) [:flanger :fback]
-          (param-key param-5) [:flanger :wet]
-          (param-key param-6) [:flanger :shape]
-          :flanger env
-          :param-cnt param-6}]))))
+(define-fx "flanger"
+  (fn [aL aR rate depth delay fback wet shape]
+    (format "\n %s, %s Flanger_stereo %s, %s, %s, %s, %s, %s, %s, %s \n"
+            aL aR aL aR rate depth delay fback wet shape))
+  [:rate 5.15 :depth 0.001 :delay 0.001 :fback 0
+   :wet 1 :shape 1])
 
-(defn delayl [& {:keys [base shape ival scatter spread
-                        mode hpf lpf fback layers] :as env}]
-  (let [defaults {:base 50 :layers 8 :ival 0.07
-                  :shape 1 :scatter 0 :spread 0.5
-                  :fback 0.95 :hpf 70 :lpf 70 :mode 1}
-        env (merge defaults env)]
-    (fn [aL aR param-cnt]
-      (let [param-1 (inc param-cnt)
-            param-2 (inc param-1)
-            param-3 (inc param-2)
-            param-4 (inc param-3)
-            param-5 (inc param-4)
-            param-6 (inc param-5)
-            param-7 (inc param-6)
-            param-8 (inc param-7)
-            param-9 (inc param-8)
-            param-10 (inc param-9)]
-        [(format  "\n%s, %s DelayLayer %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
-                  aL aR aL aR base shape ival scatter spread mode hpf lpf fback layers)
-         {(param-key param-1) [:delayl :base]
-          (param-key param-2) [:delayl :shape]
-          (param-key param-3) [:delayl :ival]
-          (param-key param-4) [:delayl :scatter]
-          (param-key param-5) [:delayl :spread]
-          (param-key param-6) [:delayl :mode]
-          (param-key param-7) [:delayl :hpf]
-          (param-key param-8) [:delayl :lpf]
-          (param-key param-9) [:delayl :fback]
-          (param-key param-10) [:delayl :layers]
-          :flanger env
-          :param-cnt param-10}]))))
+(define-fx "delayl"
+  (fn [aL aR base layers ival shape
+       scatter spread fback hpf
+       lpf mode]
+    (format  "\n%s, %s DelayLayer %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
+             aL aR aL aR base shape ival scatter spread mode hpf lpf fback layers))
+  [:base 50 :layers 8 :ival 0.07
+   :shape 1 :scatter 0 :spread 0.5
+   :fback 0.95 :hpf 70 :lpf 70 :mode 1])
 
-(defn perc [& {:keys [dur exp]
-               :or {dur 0.4 exp 0.1}}]
-  (fn [aL aR]
+(define-fx "perc"
+  (fn [aL aR dur exp]
     (format "\np3=%f\naPercEnv expon 1,%f,%f\n%s*=aPercEnv\n%s*=aPercEnv\n"
-            (* 1.1 dur) dur exp aL aR)))
+            (* 1.1 dur) dur exp aL aR))
+  [:dur 0.4 :exp 0.1])
 
-
-(defn butbp [& {:keys [center band]
-                :or {center 1000 band 100}}]
-  (fn [aL aR]
+(define-fx "butbp"
+  (fn [aL aR center band]
     (format "\n%s butbp %s, %f,%f\n\n%s butbp %s, %f,%f\n"
-            aL aL center band aR aR center band)))
+            aL aL center band aR aR center band))
+  [:center 1000 :band 100])
 
-(defn buthp [& cutoff]
-  (let [cutoff (if (empty? cutoff)
-                 200 (first cutoff))]
-    (fn [aL aR]
-      (format "\n%s buthp %s,%f\n\n%s buthp %s, %f\n"
-              aL aL cutoff aR aR cutoff))))
+(define-fx "buthp"
+  (fn [aL aR cutoff]
+    (format "\n%s buthp %s,%f\n\n%s buthp %s, %f\n"
+            aL aL cutoff aR aR cutoff))
+  [:cutoff 200])
 
-(defn butlp [& cutoff]
-  (let [cutoff (if (empty? cutoff)
-                 1000 (first cutoff))]
-    (fn [aL aR]
-      (format "\n%s butlp %s,%f\n\n%s butlp %s, %f\n"
-              aL aL cutoff aR aR cutoff))))
+(define-fx "butlp"
+  (fn [aL aR cutoff]
+    (format "\n%s butlp %s,%f\n\n%s butlp %s, %f\n"
+            aL aL cutoff aR aR cutoff))
+  [:cutoff 1000])
 
-(defn vibrato [& freq]
-  (let [delay1 0.1
-        delay2 1.2
-        freq (if (empty? freq)
-               5.5 (first freq))]
-    (fn [aL aR]
-      (format "\n%s,%s Vibrato %s,%s,%f,%f,%f,giSine\n"
-              aL aR aL aR freq delay1 delay2 ))))
+(define-fx "vibrato"
+  (fn [aL aR freq delay1 delay2]
+    (format "\n%s,%s Vibrato %s,%s,%f,%f,%f,giSine\n"
+            aL aR aL aR freq delay1 delay2))
+  [:freq 5.5 :delay1 0.1 :delay2 1.2])
 
-(defn distort [& dist]
-  (let [dist (if (empty? dist)
-               0.5 (first dist))
-        dist (max 0.05 dist)]
-    (fn [aL aR]
+(define-fx "distort"
+  (fn [aL aR dist]
+    (let [dist (max 0.05 dist)]
       (format (str "\n%s distort %s*exp(%f), %f,giDrone \n"
                    "\n%s distort %s*exp(%f), %f,giDrone \n")
-              aL aL dist dist aR aR dist dist))))
+              aL aL dist dist aR aR dist dist)))
+  [:dist 0.5])
 
-(comment
-  (freeverb :room 1)
-
-  ((freeverb :sr 22.2) "aRight" "aLeft")
-
-  (gstring/format "%d" 1))

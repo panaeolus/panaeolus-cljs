@@ -1,4 +1,40 @@
+@font-face {
+    font-family: 'FiraMono';
+    src: url('FiraMono-Regular.ttf');
+}
+
+.ace-editor {
+    font-family: 'FiraMono', monospace;
+}
+
+body {
+    margin: 0;
+    overflow-x: hidden;
+}
+
 #editor {
-    width: 80%;
-    height: 500px;
+    position: absolute;
+    width: 100%;
+    height: 80%;
+    left: 0;
+    right: 0;
+    top: 0
+}
+
+#console {
+    position: absolute;
+    width: 100%;
+    height: 20%;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #000000;
+    color: white;
+    overflow-x: hidden;
+    padding-left: 3.1em;
+    overflow-y: scroll;
+}
+
+#console > * {
+    vertical-align: top;
 }

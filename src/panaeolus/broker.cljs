@@ -67,6 +67,7 @@
 
 
 (defn pattern-loop-queue [env]
+  (prn "BOTTLENECK 1?")
   (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
     (put! user-input-channel env)
     (when-not (:kill env)
@@ -80,7 +81,9 @@
             ;; initial-queue (create-event-queue dur input-messages)
             initial-mod-div (calc-mod-div meter dur)
             initial-fx (:fx env)]
-        ((get env :recompile-fn))
+        (prn "BOTTLENECK 2?")
+        (go ((get env :recompile-fn)))
+        (prn "AFTER BOTTLENECK 2?")
         (swap! pattern-registry assoc pattern-name user-input-channel)
         (go-loop [index 0
                   a-index 0
@@ -93,7 +96,7 @@
                           (first initial-queue))
                   queue-buffer initial-queue
                   new-user-data nil
-                  last-tick  (.GetCurrentTimeSamples csound Csound) 
+                  last-tick  (.GetCurrentTimeSamples csound Csound)
                   stop? false
                   last-fx (or initial-fx "")]
           (let [{:keys [pause kill stop? dur input-messages meter fx new-len]} new-user-data
@@ -111,7 +114,7 @@
                              (not= (str last-fx) (str fx))) 
                     (println "recompileing fx-changes...")
                     ;; (prn new-user-data)
-                    ((get new-user-data :recompile-fn)))
+                    (go ((get new-user-data :recompile-fn))))
                 ;; _ (when new-user-data (prn "END OF CALC"))
                 ;; new-user-data nil
                 ]

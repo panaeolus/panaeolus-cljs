@@ -19,7 +19,7 @@
   (:require-macros [panaeolus.macros :refer [ demo -> forever ]]))
 
 
-(do
+(defn pull-panaeolus []
   (panaeolus.macros/pull-symbols 'panaeolus.broker)
   (panaeolus.macros/pull-symbols 'panaeolus.engine)
   (panaeolus.macros/pull-symbols 'panaeolus.fx)
@@ -37,6 +37,8 @@
   (panaeolus.macros/pull-macros  'panaeolus.all)
   ;;(panaeolus.macros/pull-macros  'panaeolus.macros)
   )
+
+(pull-panaeolus)
 
 (comment
   (pat 'melody1 (panaeolus.instruments.tr808/mid_conga)

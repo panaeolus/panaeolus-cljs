@@ -8,13 +8,20 @@
   <body>
     <div id="editor">
     </div>
+    <div id="console"></div>
     <script src="front-end-script.js" type="text/javascript" charset="utf-8">
     </script>
-    <script src="../node_modules/ace-builds/src/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="ace.js" type="text/javascript" charset="utf-8"></script>
     <script>
     var editor = ace.edit("editor");
-    editor.setTheme("ace/theme/github");
+    editor.setTheme("ace/theme/vibrant_ink");
     editor.getSession().setMode("ace/mode/clojure");
+    editor.setOptions({
+    cursorStyle: "wide",
+    showPrintMargin: false,
+    fontFamily: "FiraMono",
+    fontSize: "1.5em"
+    });
     </script>
   </body>
 </html>

@@ -1,6 +1,10 @@
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, ipcMain} = require('electron')
 const path = require('path')
 const url = require('url')
+
+const exec = require('child_process').exec;
+const spawn = require('child_process').spawn;
+
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -8,8 +12,18 @@ let win
 
 function createWindow () {
   // Create the browser window.
+  var proc = spawn('lumo', ['-c', 'src:~/.m2/repository/andare/andare/0.6.0/andare-0.6.0.jar:~/.m2/repository/macchiato/fs/0.0.6/fs-0.0.6.jar', '-e', `(println "HASHD")`]);
+  
+  proc.stdout.setEncoding('utf8');
+  proc.stdout.on('data', function (data) {
+    var str = data.toString()
+    var lines = str.split(/(\r?\n)/g);
+    console.log(lines.join(""));
+    // ipcMain.send(lines.join(""));
+    
+  });
   win = new BrowserWindow({width: 800, height: 600})
-
+  process.stdout.write('your output to command prompt console or node js ');
   // and load the index.html of the app.
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'index.html'),
@@ -19,7 +33,11 @@ function createWindow () {
 
   // Open the DevTools.
   // win.webContents.openDevTools()
-
+  
+  // console.log('filename: ' + path.basename(fileName).replace('cljs', 'js'));
+  
+  
+  
   // Emitted when the window is closed.
   win.on('closed', () => {
     // Dereference the window object, usually you would store windows
@@ -51,5 +69,13 @@ app.on('activate', () => {
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+
+ipcMain.on('asynchronous-message', (event, arg) => {
+  console.log(arg)  // prints "ping"
+  event.sender.send('asynchronous-reply', 'pong')
+})
+
+ipcMain.on('synchronous-message', (event, arg) => {
+  console.log(arg)  // prints "ping"
+  event.returnValue = 'pong'
+})

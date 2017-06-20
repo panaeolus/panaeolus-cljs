@@ -88,6 +88,35 @@
             or-map#
             instr-number#])))))
 
+(defmacro define-fx
+  [fx-name string-inject-fn param-vector]
+  `(letfn [(param-key# [param-num#]
+             (keyword (str "p" param-num#)))]
+     (let [param-vector-keywords# (filter keyword? ~param-vector)           
+           keys-vector# (->> param-vector-keywords#
+                             (map (comp symbol name))
+                             (into []))]
+       (defn ~(symbol fx-name)
+         [~(symbol "&") {~(symbol "keys") keys-vector# :as fx-env#}]
+         (let [fx-env# (merge (apply hash-map ~param-vector) fx-env#)]
+           (fn [aL# aR# param-cnt#]
+             (let [param-nums# (range (inc param-cnt#)
+                                      (inc (+ param-cnt# (count param-vector-keywords#))))
+                   param-val-list# (partition 2 (interleave (map param-key# param-nums#)
+                                                            param-vector-keywords#))
+                   fx-name-key# (keyword ~fx-name)]
+               ;; Swap parameter name for p-field number
+               [(apply ~string-inject-fn aL# aR#
+                       (map (fn [s#] (str "p" s#)) param-nums#))
+                ;; Make a map of {:px [:fx-name :param-name]}
+                ;; and {[:fx-name :param-name] value}
+                (merge (reduce (fn [init# val#] (assoc init# (first val#)
+                                                       [fx-name-key# (second val#)]))
+                               {} param-val-list#)
+                       (reduce (fn [init# val#] (assoc init# [fx-name-key# (second val#)]
+                                                       (get fx-env# (second val#))))
+                               {} param-val-list#)
+                       {:param-cnt (last param-nums#)})])))))))
 
 (defmacro demo [instr & dur]
   `(let [instr# (~instr nil)
