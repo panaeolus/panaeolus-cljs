@@ -59,24 +59,23 @@
     ;; (prn "FX ENV: " (:fx env))
     (if (contains? @csound-instrument-map name)
       (let [instr-number (get @csound-instrument-map name)
+            _ (prn "instr-name: " name "INSTR NUMBER: " instr-number)
             instr-string (replace-instr-number instr instr-number)
             [instr-string env] (insert-zak-and-fx instr-string env)
             env (assoc env :recompile-fn (fn [] (.CompileOrc csound Csound instr-string)))]
-        (if (not= (str (:fx env)) (get-in @csound-instrument-map (str name "-fx"))) 
-          (swap! csound-instrument-map assoc (str name "-fx") (str (:fx env)))
-          [instr-number env])
         [instr-number env])
       (let [instr-number (->> @csound-instrument-map
                               vals
                               (apply max)
                               inc)
+            _ (prn "instr-name: " name "INSTR NUMBER: " instr-number)
             instr-string (replace-instr-number instr instr-number)
             [instr-string env] (insert-zak-and-fx instr-string env)
             env (assoc env :recompile-fn (fn [] (.CompileOrc csound Csound instr-string)))
             ;;_ (prn "compiled-env2: " env)
             ]
         ;; (.CompileOrc csound Csound instr-string)
-        (swap! csound-instrument-map assoc name instr-number (str name "-fx") (str (:fx env)))
+        (swap! csound-instrument-map assoc name instr-number)
         [instr-number env]))))
 
 ;; (compile-csound-instrument "a" (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc") [])

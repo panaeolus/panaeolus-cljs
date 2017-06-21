@@ -12,9 +12,10 @@ window.onkeydown = function(evt) {
   keysdown[code] = false;
   if (lastkey === 17) {
     switch (code) {
-    case 13: {console.log('CTRL + ENTER');
-	      getSelectedText();
-	     }
+    case 13: {
+      // console.log('CTRL + ENTER');
+      evaluateSelectedText();
+    }
       break;
     } 
   } else {
@@ -26,12 +27,14 @@ window.onkeydown = function(evt) {
 var baseLogFunction = console.log;
 console.log = function(){
   baseLogFunction.apply(console, arguments);
-
+  var console = document.querySelector("#console");
   var args = Array.prototype.slice.call(arguments);
   for(var i=0;i<args.length;i++){
-    var node = createLogNode(args[i]);
-    var console = document.querySelector("#console");
-    console.appendChild(node);
+    
+    if (!/=>/.test(args[i].match)){
+      console.innerHTML += args[i]
+    };
+    
     console.scrollTop = console.scrollHeight - console.clientHeight;
   }
 
@@ -50,25 +53,26 @@ window.onerror = function(message, url, linenumber) {
 }
 
 
-function getSelectedText()
+function evaluateSelectedText()
 {
-  // obtain the object reference for the <textarea>
-  var txtarea = document.getElementById("editor");
-  // obtain the index of the first selected character
-  var start = txtarea.selectionStart;
-  // obtain the index of the last selected character
-  var finish = txtarea.selectionEnd;
-  // obtain the selected text
-  var sel = txtarea.value.substring(start, finish);
-  console.log(sel);
+  var selectedText = editor.getSession().doc.getTextRange(editor.selection.getRange());
+  ipcRenderer.send('cljs-command', selectedText)
+  // console.log(selectedText);
   // do something with the selected content
 }
 
 const {ipcRenderer} = require('electron')
-console.log(ipcRenderer.sendSync('synchronous-message', 'ping'))
 
-ipcRenderer.on('asynchronous-reply', (event, arg) => {
+
+ipcRenderer.on('cljs-command', (event, arg) => {
   console.log(arg) // prints "pong"
 })
 
-ipcRenderer.send('asynchronous-message', 'ping')
+
+// ipcRenderer.send('console-log-ping');
+
+// ipcRenderer.on('console-log-ping', (event, arg) => {
+//   console.log(arg)
+// })
+
+
