@@ -1,41 +1,41 @@
-var keysdown = {};
-var lastkey = 0;
+var ctrlDown = false;
 
-window.onkeydown = function(evt) {
+window.onkeyup = function(evt) {
   var e = evt || window.event;
-  keysdown[e.keyCode ? e.keyCode : e.charCode] = true;
+  var code = e.keyCode ? e.keyCode : e.charCode;
+  if (code === 17) {
+    ctrlDown = true;
+  }
 }
 
 window.onkeydown = function(evt) {
   var e = evt || window.event;
   var code = e.keyCode ? e.keyCode : e.charCode;
-  keysdown[code] = false;
-  if (lastkey === 17) {
-    switch (code) {
-    case 13: {
-      // console.log('CTRL + ENTER');
-      evaluateSelectedText();
-    }
-      break;
-    } 
-  } else {
-    lastkey = code;
+  if (code === 17) {
+    ctrlDown = true;
+  }
+
+  if (ctrlDown && code === 13) {
+    evaluateSelectedText();
   }
 }
+
+
 
 
 var baseLogFunction = console.log;
 console.log = function(){
   baseLogFunction.apply(console, arguments);
-  var console = document.querySelector("#console");
+  var printArea = document.querySelector("#console");
   var args = Array.prototype.slice.call(arguments);
   for(var i=0;i<args.length;i++){
     
-    if (!/=>/.test(args[i].match)){
-      console.innerHTML += args[i]
+    if (!/=>/g.test(args[i].match)){
+      console.info(args[i], /=>/g.test(args[i].match));
+      printArea.innerHTML += args[i]
     };
     
-    console.scrollTop = console.scrollHeight - console.clientHeight;
+    printArea.scrollTop = printArea.scrollHeight - printArea.clientHeight;
   }
 
 }

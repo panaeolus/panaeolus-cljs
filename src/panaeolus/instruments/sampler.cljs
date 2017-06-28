@@ -78,25 +78,8 @@
          (into total-bank
                (or (get all-samples (keyword (first bank)))
                    (get all-samples (first bank))
-                   (throw (js/Error. (str "The sample bank: " (first bank) " does not exist"))))
-               #_(case (first bank)
-                   ("stl-kick" :stl-kick) (get all-samples :stl_kicks)
-                   ("stl-perc" :stl-perc) (get all-samples :stl_percs)
-                   ("stl-bass" :stl-bass) (get all-samples :stl_bass)
-                   ("stl-snare" :stl-snare) (get all-samples :stl_snares)
-                   ("stl-rise" :stl-rise) (get all-samples :stl_rise)
-                   ("stl-texture" :stl-texture) (get all-samples :stl_textures)
-                   ("stl-clap" :stl-clap) (get all-samples :stl_clap)
-                   ("stl-hat" :stl-hat) (get all-samples :stl_hats)
-                   ("stl-fx" :stl-fx) (get all-samples :stl_fx)
-                   ("pan" :pan) (get all-samples :pan)
-                   ("jb" :jb) (get all-samples :jb)
-                   ("jx" :jx) (get all-samples :jx)
-                   ("jv" :jv) (get all-samples :jvgabba)                   
-                   ;; ("xx" :xx) (get all-samples :xx)
-                   ;; ("pulse" :pulse) (get all-samples :pulse)
-                   ;; ("rash" :rash) (get all-samples :rash) 
-                   )))))
+                   (throw (js/Error. (str "The sample bank: " (first bank) " does not exist"
+                                          "available banks are: " (keys all-samples)))))))))
     (max 1000 (get env [:sample]))))
 
 (definstrument "sampler"
@@ -132,10 +115,11 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:speed 1}
-   :p6 {:freq (fn [env]
-                (let [tbl-num-v (get all-samples :stl_kicks)]
-                  (nth tbl-num-v
-                       (mod (:freq env) (count tbl-num-v)))))}
+   :p6 {:freq (first (get all-samples :stl-kick))
+        :fn (fn [env]
+              (let [tbl-num-v (get all-samples :stl-kick)]
+                (nth tbl-num-v
+                     (mod (get env [:freq]) (count tbl-num-v)))))}
    :p7 {:loop 0}})
 
 
@@ -145,10 +129,10 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}
-   :p6 {:sample (fn [env]
-                  (let [tbl-num-v (get all-samples :stl_synths)]
-                    (nth tbl-num-v
-                         (mod (:sample env) (count tbl-num-v)))))}
+   :p6 {:sample 1104 :fn (fn [env]
+                           (let [tbl-num-v (get all-samples :stl-synth)] 
+                             (nth tbl-num-v
+                                  (mod (get env [:sample]) (count tbl-num-v)))))}
    :p7 {:samplefreq 130.82}})
 
 (definstrument "stl-bass"
@@ -158,10 +142,11 @@
    :p4 {:amp -12}
    :p5 {:freq 440}
    :p6 {:sample (fn [env]
-                  (let [tbl-num-v (get all-samples :stl_bass)]
+                  (let [tbl-num-v (get all-samples :stl-bass)]
                     (nth tbl-num-v
-                         (mod (:sample env) (count tbl-num-v)))))}
+                         (mod (get env [:sample]) (count tbl-num-v)))))}
    :p7 {:samplefreq 32.703}})
+
 
 (comment 
   (demo (nsampler :amp -12 :freq 120 :sample 1135 :fx []))

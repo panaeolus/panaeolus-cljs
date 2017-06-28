@@ -3,9 +3,16 @@
   (:require-macros [panaeolus.macros :refer [define-fx]]))
 
 
+(define-fx "reverb"
+  (fn [aL aR mix]
+    (str (format "\n chnmix %s*%s, \"RvbL\" \n chnmix %s*%s,\"RvbR\" \n" aL mix aR mix)
+         (format "%s = max(1-%s,0)\n%s = max(1-%s,0)\n" aL mix aR mix)))
+  [:mix 0.3])
+
+;;BROKEN!!
 (define-fx "freeverb"
   (fn [aL aR room damp sr]
-    (str (format"\n%s, %s freeverb %s*1.5, %s*1.5, p%s, p%s, p%s\n" aL aR aL aR room damp sr)
+    (str (format"\n%s, %s freeverb %s, %s, %s, %s, %s\n" aL aR aL aR room damp sr)
          "kRvbEnv expsegr 1, p3, 1, p3*2, .01\n"
          aL " *= kRvbEnv\n" aR " *= kRvbEnv\n"))
   [:room 0.9 :damp 0.35 :sr 44100])
@@ -35,7 +42,7 @@
 (define-fx "perc"
   (fn [aL aR dur exp]
     (format "\np3=%f\naPercEnv expon 1,%f,%f\n%s*=aPercEnv\n%s*=aPercEnv\n"
-            (* 1.1 dur) dur exp aL aR))
+            dur dur exp aL aR))
   [:dur 0.4 :exp 0.1])
 
 (define-fx "butbp"
@@ -58,7 +65,7 @@
 
 (define-fx "vibrato"
   (fn [aL aR freq delay1 delay2]
-    (format "\n%s,%s Vibrato %s,%s,%f,%f,%f,giSine\n"
+    (format "\n%s,%s Vibrato %s,%s,%s,%s,%s,giSine\n"
             aL aR aL aR freq delay1 delay2))
   [:freq 5.5 :delay1 0.1 :delay2 1.2])
 
@@ -70,3 +77,8 @@
               aL aL dist dist aR aR dist dist)))
   [:dist 0.5])
 
+(define-fx "binauralize"
+  (fn [aL aR cent diff]
+    (format "\n%s,%s binauralize %s,%s,%s\n"
+            aL aR aL cent diff))
+  [:cent 1.01 :diff 1])

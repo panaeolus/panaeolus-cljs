@@ -7,9 +7,7 @@
                     :refer [go go-loop]])
   (:import [goog.structs PriorityQueue]))
 
-
 (declare csound)
-
 
 (if-not csound
   (do (def csound (js/require "csound-api"))

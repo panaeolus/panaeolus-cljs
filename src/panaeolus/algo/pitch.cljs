@@ -2,6 +2,8 @@
   (:require [panaeolus.freq :refer [midi->freq freq->midi
                                     scale-from-midi]]))
 
+;; URGENT CHECK [:freq] vs :freq
+
 (defn octave
   "Octave pitch shift,
    1 = Octave up
@@ -14,12 +16,14 @@
                    2)]
     (assoc env :freq (reduce #(if (neg? %2)
                                 (conj %1 %2)
-                                (conj %1 (* operator %2))) [] (:freq env)))))
+                                (conj %1 (* operator %2))) [] (or (get env :freq)
+                                                                  (get env [:freq]))))))
 
 (defn midi [env]
   (letfn [(toMidi [freq]
             (reduce (fn [x y] (conj x (midi->freq y))) [] freq))]
-    (assoc env :freq (let [freq (:freq env)]
+    (assoc env :freq (let [freq (or (get env :freq)
+                                    (get env [:freq]))]
                        (if (or (not (seqable? freq))
                                (not (seqable? (first freq))))
                          (toMidi freq)
@@ -37,4 +41,4 @@
 
 
 ;; (scale {:dur [1 1 1 1 1 1 1], :seq-parsed? true, :xtralen 0, :freq [0 0 1 3 2 0 7], :len 16, :kill true} :major)
-(scale {:freq [32 34 36 ]} [:c3 :d3] )
+;; (scale {:freq [32 34 36 ]} [:c3 :d3] )

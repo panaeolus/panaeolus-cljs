@@ -3,8 +3,8 @@
             [clojure.string :as string]
             [macchiato.fs :as fs]))
 
-#_(insert-zak-and-fx (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc")
-                     (panaeolus.fx/lofi))
+#_(println (first (insert-zak-and-fx (fs/slurp "src/panaeolus/csound/orchestra/drone/sruti.csd")
+                                     (panaeolus.fx/lofi))))
 #_(println (insert-zak-and-fx
             (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc")
             (panaeolus.fx/freeverb) 
@@ -43,10 +43,11 @@
                                 (merge env env-res))))) 
                    ["" env])
         fx-and-zak (str fx "\n" zak-system)]
+    ;; REMINDER, fix this regex
     [(string/replace instr #"\bout?.*" fx-and-zak) env]))
 
 (defn- replace-instr-number [instr num]
-  (string/replace instr #"instr\s+[0-9]*" (str "instr " num)))
+  (string/replace-first instr #"instr\s+[0-9]*" (str "instr " num)))
 
 (defn compile-csound-instrument
   "name is the function name for the instr
@@ -59,7 +60,7 @@
     ;; (prn "FX ENV: " (:fx env))
     (if (contains? @csound-instrument-map name)
       (let [instr-number (get @csound-instrument-map name)
-            _ (prn "instr-name: " name "INSTR NUMBER: " instr-number)
+            ;; _ (prn "instr-name: " name "INSTR NUMBER: " instr-number)
             instr-string (replace-instr-number instr instr-number)
             [instr-string env] (insert-zak-and-fx instr-string env)
             env (assoc env :recompile-fn (fn [] (.CompileOrc csound Csound instr-string)))]
@@ -68,7 +69,7 @@
                               vals
                               (apply max)
                               inc)
-            _ (prn "instr-name: " name "INSTR NUMBER: " instr-number)
+            _ (println "Csound instrument: " name "loaded.")
             instr-string (replace-instr-number instr instr-number)
             [instr-string env] (insert-zak-and-fx instr-string env)
             env (assoc env :recompile-fn (fn [] (.CompileOrc csound Csound instr-string)))
@@ -199,10 +200,10 @@
                        (recur
                         (rest param-keys)
                         (into params [param-name value]))))))
-          (do ;;(prn input-messages)
-            (assoc env' :input-messages input-messages :dur (if (:uncycle? env')
-                                                              (:dur env')
-                                                              (fill-the-bar (:dur env') (:len env'))))))))))
+          (do (prn input-messages)
+              (assoc env' :input-messages input-messages :dur (if (:uncycle? env')
+                                                                (:dur env')
+                                                                (fill-the-bar (:dur env') (:len env'))))))))))
 
 
 #_(apply (first (panaeolus.instruments.sampler/sampler :fx (panaeolus.fx/lofi)

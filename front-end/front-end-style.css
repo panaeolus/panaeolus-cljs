@@ -31,10 +31,11 @@ body {
     background-color: #000000;
     color: white;
     overflow-x: hidden;
-    padding-left: 3.1em;
+    padding-left: 0.1em;
     overflow-y: scroll;
 }
 
 #console > * {
     vertical-align: top;
+    font-family: 'FiraMono', monospace;
 }

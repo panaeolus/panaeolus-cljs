@@ -19,3 +19,4 @@ node_modules
 .dir-locals*
 dev
 build/
+front-end/lumo

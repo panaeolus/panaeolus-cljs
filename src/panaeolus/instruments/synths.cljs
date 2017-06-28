@@ -77,7 +77,8 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 100}
-   :p6 {:div 2}})
+   :p6 {:div 2}
+   :p7 {:res 0.3}})
 
 ;; (demo (tb303 :freq 40 :lpf 1.4 :res 20 :att 0.01 :dec 0.1 :sus 0.01 :wave 4 :filt 1 :dist 2  :amp -1 0.5) 0.9)
 

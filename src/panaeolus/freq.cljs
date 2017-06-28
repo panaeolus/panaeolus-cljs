@@ -152,8 +152,6 @@
      :lydian-minor       [2 2 2 1 1 2 2]}))
 
 
-
-
 (defn scale-all [base mode]
   (reductions + (base note->midi) (take 80 (cycle (mode modes)))))
 
@@ -172,55 +170,3 @@
                root)]
     (vec (take (inc span) (map #(+ root  %) (reductions + 0 (cycle (mode modes))))))))
 
-(comment 
-
-  (defn scale
-    "return a scale in vector"
-    [root mode & {:keys [span]
-                  :or {span 8}}]
-    (vec (take span (doall (map #(+ (note->midi root) %) (reductions + 0 (mode modes)))))))
-
-
-  (defn sæti [root key p & oct]
-    (let [str-fn  (map name p)
-          str-cnt-dot (map #(* -12 %)  (for [x str-fn] (count (filter #(= \. %) (seq x)))))
-          str-cnt-comma (map #(* 12 %) (for [x str-fn] (count (filter #(= \' %) (seq x)))))
-          flat-sharp-lookup (vec (for [x (range (count str-fn))] (if (= (first (nth str-fn x)) \#) 1
-                                                                     (if (= (first (nth str-fn x)) \b) -1 0))))
-          str-comma-dot (doall (mapv #(+ % %2) str-cnt-dot str-cnt-comma))
-          str-del-comma (for [x str-fn] (apply str (remove #{\. \'} x)))
-          str-del-b-s   (map #(string/replace % #"^b|^#" "") str-del-comma)
-          grunnsæti {:i 0 :ii 1 :iii 2 :iv 3 :v 4 :vi 5 :vii 6
-                     :I 0 :II 1 :III 2 :IV 3 :V 4 :VI 5 :VII 6}
-          sæti-keyword (map keyword str-del-b-s)
-          sæti-lookup  (map #(% grunnsæti) sæti-keyword)
-          skali        (scale root key)
-          skali-lookup (map #(get skali %) sæti-lookup)
-          skali-lookup (if (nil? oct) skali-lookup (map #(+ (* 12 (+ (first oct))) %) skali-lookup))
-          krom-oct-map (mapv #(+ % %2 %3) flat-sharp-lookup str-comma-dot skali-lookup)
-          utkoma-hz    (mapv #(midi->freq %) krom-oct-map)]
-      utkoma-hz))
-
-
-  (defn scale-tool [root key p]
-    (let [p (vector p)
-          str-fn  (map name p)
-          str-cnt-dot (map #(* -12 %)  (for [x str-fn] (count (filter #(= \. %) (seq x)))))
-          str-cnt-comma (map #(* 12 %) (for [x str-fn] (count (filter #(= \' %) (seq x)))))
-          flat-sharp-lookup (vec (for [x (range (count str-fn))] (if (= (first (nth str-fn x)) \#) 1
-                                                                     (if (= (first (nth str-fn x)) \b) -1 0))))
-          str-comma-dot (doall (mapv #(+ % %2) str-cnt-dot str-cnt-comma))
-          str-del-comma (for [x str-fn] (apply str (remove #{\. \'} x)))
-          str-del-b-s   (map #(string/replace % #"^b|^#" "") str-del-comma)
-          grunnsæti {:i 0 :ii 1 :iii 2 :iv 3 :v 4 :vi 5 :vii 6
-                     :I 0 :II 1 :III 2 :IV 3 :V 4 :VI 5 :VII 6}
-          sæti-keyword (map keyword str-del-b-s)
-          sæti-lookup  (map #(% grunnsæti) sæti-keyword)
-          skali        (scale root key)
-          skali-lookup (map #(get skali %) sæti-lookup)
-          krom-oct-map (mapv #(+ % %2 %3) flat-sharp-lookup str-comma-dot skali-lookup)
-          utkoma-hz    (mapv #(midi->freq %) krom-oct-map)]
-      {:freq [utkoma-hz] :midi [krom-oct-map]})))
-
-
-;; (scale-tool :c :major "i ii iv v")

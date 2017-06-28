@@ -42,7 +42,8 @@
    (fs/slurp "src/panaeolus/csound/fx/delay.udo") "\n"
    (fs/slurp "src/panaeolus/csound/fx/pitch_shifter.udo") "\n"
    (fs/slurp "src/panaeolus/csound/fx/pitch_shifter_2.udo") "\n"
-   (fs/slurp "src/panaeolus/csound/fx/vibrato.udo")))
+   (fs/slurp "src/panaeolus/csound/fx/vibrato.udo") "\n"
+   (fs/slurp "src/panaeolus/csound/fx/binauralize.udo")))
 
 (def ^:private orc-init-bottom
   "
@@ -50,8 +51,12 @@
   instr 10000
   aMasterLeft chnget \"OutL\"
   aMasterRight chnget \"OutR\"
-  outs aMasterLeft,\\ 
-       aMasterRight
+  aReverbLeft chnget \"RvbL\"
+  aReverbRight chnget \"RvbR\"
+  
+  aReverbLeft, aReverbRight reverbsc aReverbLeft, aReverbRight, 0.8, 9000
+  outs aMasterLeft+aReverbLeft,\\ 
+       aMasterRight+aReverbRight
   ;;generating a different filename each time csound renders
   itim     date
   Stim     dates     itim
@@ -66,6 +71,8 @@
   ;;  fout Sfilnam, 4, aMasterLeft, aMasterRight
   chnclear \"OutL\"
   chnclear \"OutR\" 
+  chnclear \"RvbL\"
+  chnclear \"RvbR\" 
   endin
   ")
 

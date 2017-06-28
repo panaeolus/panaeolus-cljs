@@ -67,7 +67,6 @@
 
 
 (defn pattern-loop-queue [env]
-  (prn "BOTTLENECK 1?")
   (if-let [user-input-channel (get @pattern-registry (:pattern-name env))] 
     (put! user-input-channel env)
     (when-not (:kill env)
@@ -81,9 +80,7 @@
             ;; initial-queue (create-event-queue dur input-messages)
             initial-mod-div (calc-mod-div meter dur)
             initial-fx (:fx env)]
-        (prn "BOTTLENECK 2?")
         (go ((get env :recompile-fn)))
-        (prn "AFTER BOTTLENECK 2?")
         (swap! pattern-registry assoc pattern-name user-input-channel)
         (go-loop [index 0
                   a-index 0
