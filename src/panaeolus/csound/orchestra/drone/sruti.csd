@@ -41,13 +41,13 @@ instr SrutiDrone
   a1L, a1R pan2 a1, kpanner
 
   ;; create Risset otput
-  krismix = 1
+  ;; krismix = 1
   aout		sum		a2, a3, a4, a5, a6, a7, a8, a9
-  a2L,a2R pan2 aout*krismix, kpanner
+  a2L,a2R pan2 aout, kpanner
 
   ;; create binaural beating otput
-  kbbmix = 0.01
-  kbbrate = 0.1
+  ;; kbbmix = 0.01
+  ;; kbbrate = 0.1
   ;; a3L,a3R binauralize a1*kbbmix, gkfreqSruti, kbbrate
 
   ; combine and send to global otput channels

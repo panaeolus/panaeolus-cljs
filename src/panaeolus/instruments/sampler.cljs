@@ -129,10 +129,10 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}
-   :p6 {:sample 1104 :fn (fn [env]
-                           (let [tbl-num-v (get all-samples :stl-synth)] 
-                             (nth tbl-num-v
-                                  (mod (get env [:sample]) (count tbl-num-v)))))}
+   :p6 {:sample 0 :fn (fn [env]
+                        (let [tbl-num-v (get all-samples :stl-synth)] 
+                          (nth tbl-num-v
+                               (mod (get env [:sample]) (count tbl-num-v)))))}
    :p7 {:samplefreq 130.82}})
 
 (definstrument "stl-bass"
@@ -141,10 +141,10 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}
-   :p6 {:sample (fn [env]
-                  (let [tbl-num-v (get all-samples :stl-bass)]
-                    (nth tbl-num-v
-                         (mod (get env [:sample]) (count tbl-num-v)))))}
+   :p6 {:sample 0 :fn (fn [env]
+                        (let [tbl-num-v (get all-samples :stl-bass)]
+                          (nth tbl-num-v
+                               (mod (get env [:sample]) (count tbl-num-v)))))}
    :p7 {:samplefreq 32.703}})
 
 

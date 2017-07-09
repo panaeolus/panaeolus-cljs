@@ -20,11 +20,12 @@
     }
   },
   "dependencies": {
+    "cljs-boot": "^1.0.10",
     "csound-api": "latest",
     "electron": "^1.6.11",
     "expand-home-dir": "0.0.3",
     "fastpriorityqueue": "0.2.3",
-    "lumo-cljs": "1.3.0",
+    "lumo-cljs": "^1.6.0",
     "require-rebuild": "latest"
   },
   "devDependencies": {

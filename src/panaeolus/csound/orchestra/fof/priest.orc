@@ -1,6 +1,7 @@
 ;;Electric priest from Tobias Enhus
 ;   strt 	dur 	form	pitch	p6;formant attack	p7; Amp attack P8;reverb p9: amp	
 instr 1
+  p3 = p3 + p7
   iamp = ampdbfs (p4)
   ifreq=p5
   k2 linseg 0, p3*.9, 0, p3*.1, 1  			; octaviation coefficient
@@ -37,6 +38,7 @@ instr 1
   a7 = (a11 + a12 + a13 + a14 + a15 + a16) * iamp
   aenv    linseg 0, 0.02, 1, p3 - 0.05, 1, 0.02, 0, 0.01, 0
   asig = a7/100*aenv
-  outs  a7, a7
+  
+  outs  asig, asig
 endin
 

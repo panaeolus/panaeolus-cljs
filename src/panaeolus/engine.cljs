@@ -24,7 +24,7 @@
 (.CompileOrc csound Csound orc-init)
 (.Start csound Csound)
 (.PerformAsync csound Csound (fn [] (.Stop csound Csound)))
-
+(.InputMessage csound Csound "i 10000 0 99999999999")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GLOBAL CHANNELS AND ATOMS ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

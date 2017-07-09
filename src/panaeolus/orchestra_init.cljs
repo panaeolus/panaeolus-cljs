@@ -47,16 +47,17 @@
 
 (def ^:private orc-init-bottom
   "
-  alwayson 10000
+  ;; alwayson 10000
   instr 10000
   aMasterLeft chnget \"OutL\"
   aMasterRight chnget \"OutR\"
   aReverbLeft chnget \"RvbL\"
   aReverbRight chnget \"RvbR\"
   
-  aReverbLeft, aReverbRight reverbsc aReverbLeft, aReverbRight, 0.8, 9000
-  outs aMasterLeft+aReverbLeft,\\ 
-       aMasterRight+aReverbRight
+  aRvbLeft, aRvbRight reverbsc aReverbLeft, aReverbRight, 0.85, 12000, sr, 0.5, 0
+  outs aMasterLeft+aRvbLeft,\\
+       aMasterRight+aRvbRight
+  ;;outs aReverbLeft, aRvbRight
   ;;generating a different filename each time csound renders
   itim     date
   Stim     dates     itim
@@ -73,6 +74,7 @@
   chnclear \"OutR\" 
   chnclear \"RvbL\"
   chnclear \"RvbR\" 
+  ;;clear aRvbLeft, aRvbRight, aReverbLeft, aReverbRight
   endin
   ")
 

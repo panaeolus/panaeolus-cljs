@@ -5,9 +5,10 @@
 
 (define-fx "reverb"
   (fn [aL aR mix]
-    (str (format "\n chnmix %s*%s, \"RvbL\" \n chnmix %s*%s,\"RvbR\" \n" aL mix aR mix)
-         (format "%s = max(1-%s,0)\n%s = max(1-%s,0)\n" aL mix aR mix)))
-  [:mix 0.3])
+    (str
+     (format "\n chnmix %s*%s, \"RvbL\" \n chnmix %s*%s, \"RvbR\" \n" aL mix aR mix)
+     (format "%s = %s * (1-%s)\n%s = %s * (1-%s)\n" aL aL mix aR aR mix)))
+  [:mix 0.8])
 
 ;;BROKEN!!
 (define-fx "freeverb"
