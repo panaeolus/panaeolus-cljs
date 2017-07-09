@@ -43,19 +43,17 @@
 (def bpm! nil)
 
 
+;;;;;;;;;;;;;;;;;;;
+;; Record audio ;;;
+;;;;;;;;;;;;;;;;;;;
 
-(comment 
-  (go (js/console.log (<! metro-channel)))
+(def panaeolus-is-recording? (atom false))
 
-  (go (let [event-c (chan)]
-        (>! poll-channel [3000 event-c])
-        (when (<! event-c)
-          (.InputMessage csound Csound "i 1 0 1"))))
-
-  
-  (.EvalCode csound Csound  panaeolus.orchestra-init/orc-init-fx
-             ;; "instr 2\nasig poscil 0.9, (100 + rnd(480))\nouts asig,asig\nendin"
-             ))
-
-
-
+(defn record! []
+  (if @panaeolus-is-recording?
+    (do (.InputMessage csound Csound "i 9999 0 1 0")
+        (println "\nRecording stopped!\n")
+        (reset! panaeolus-is-recording? false))
+    (do (.InputMessage csound Csound "i 9999 0 1 1")
+        (println "\nRecording started....\n")
+        (reset! panaeolus-is-recording? true))))

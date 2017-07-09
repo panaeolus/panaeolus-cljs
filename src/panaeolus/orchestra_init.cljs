@@ -14,6 +14,14 @@
   sr=44100\n
   ksmps=128\n
   " )
+(def expand-home-dir (js/require "expand-home-dir"))
+
+(def ^:private orc-init-globals
+  (format "gkRecording init 0 \n
+           gSRecordBaseLocation init \"%s\"\n
+           gSRecordLocation init \"\"\n "
+          (expand-home-dir "~/Music")))
+
 
 (def ^:private orc-init-tables
   (str
@@ -23,11 +31,8 @@
    (fs/slurp "src/panaeolus/csound/tables/scanned.orc")))
 
 
-
 (def ^:private orc-init-instr-1
   "
-  ;; alwayson 1
-  ;; zakinit 4, 1 
   instr 1
   endin
   ")
@@ -47,7 +52,43 @@
 
 (def ^:private orc-init-bottom
   "
-  ;; alwayson 10000
+  ;; Record controller
+  instr  9999
+  gkRecording = p4
+  if gkRecording > 0 then
+    ;;generating a different filename each time csound renders
+    itim     date
+    Stim     dates     itim
+    Syear    strsub    Stim, 20, 24
+    Smonth   strsub    Stim, 4, 7
+    Sday     strsub    Stim, 8, 10
+    iday     strtod    Sday
+    Shor     strsub    Stim, 11, 13
+    Smin     strsub    Stim, 14, 16
+    Ssec     strsub    Stim, 17, 19
+    gSRecordLocation sprintf  \"%s/%s_%s_%02d_%s_%s_%s.wav\",\\
+                               gSRecordBaseLocation,\\ 
+                               Syear, Smonth, iday, Shor,Smin, Ssec
+    SRecorder = {{ 
+    instr 10001
+    aL, aR monitor
+    fout gSRecordLocation, 4, aL, aR
+    if gkRecording == 0 then
+      turnoff
+    endif
+    endin
+    }}
+    kactive active 10001
+    iactive active 10001
+    if (kactive == 1) || (iactive == 1)  then
+    else
+      iresult compilestr SRecorder
+      event \"i\", 10001, 0, 3600*24
+    endif
+  endif
+  endin
+
+  ;; Master output
   instr 10000
   aMasterLeft chnget \"OutL\"
   aMasterRight chnget \"OutR\"
@@ -55,32 +96,21 @@
   aReverbRight chnget \"RvbR\"
   
   aRvbLeft, aRvbRight reverbsc aReverbLeft, aReverbRight, 0.85, 12000, sr, 0.5, 0
+
   outs aMasterLeft+aRvbLeft,\\
        aMasterRight+aRvbRight
-  ;;outs aReverbLeft, aRvbRight
-  ;;generating a different filename each time csound renders
-  itim     date
-  Stim     dates     itim
-  Syear    strsub    Stim, 20, 24
-  Smonth   strsub    Stim, 4, 7
-  Sday     strsub    Stim, 8, 10
-  iday     strtod    Sday
-  Shor     strsub    Stim, 11, 13
-  Smin     strsub    Stim, 14, 16
-  Ssec     strsub    Stim, 17, 19
-  Sfilnam  sprintf  \"/home/hlolli/Music/%s_%s_%02d_%s_%s_%s.wav\", Syear, Smonth, iday, Shor,Smin, Ssec
-  ;;  fout Sfilnam, 4, aMasterLeft, aMasterRight
+
   chnclear \"OutL\"
   chnclear \"OutR\" 
   chnclear \"RvbL\"
   chnclear \"RvbR\" 
-  ;;clear aRvbLeft, aRvbRight, aReverbLeft, aReverbRight
+
   endin
   ")
 
-
 (def orc-init
   (str orc-init-constants
+       orc-init-globals
        orc-init-tables "\n"
        orc-init-instr-1 "\n"
        orc-init-udo "\n"

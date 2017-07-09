@@ -80,7 +80,7 @@
             ;; initial-queue (create-event-queue dur input-messages)
             initial-mod-div (calc-mod-div meter dur)
             initial-fx (:fx env)]
-        (go ((get env :recompile-fn)))
+        ((get env :recompile-fn))
         (swap! pattern-registry assoc pattern-name user-input-channel)
         (go-loop [index 0
                   a-index 0

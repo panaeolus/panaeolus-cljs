@@ -13,9 +13,9 @@
 
 (defmacro pull-symbols [from-namespace]
   `(let [into-namespace# (symbol (lumo.repl/get-current-ns))
-         into-map# (or (get-in @env/*compiler* [:cljs.analyzer/namespaces
-                                                into-namespace#
-                                                :uses]) {})
+         into-map# (get-in @env/*compiler* [:cljs.analyzer/namespaces
+                                            into-namespace#
+                                            :uses])
          new-symbols# (keys (get-in @env/*compiler*
                                     [:cljs.analyzer/namespaces ~from-namespace :defs]))
          merged-map# (reduce #(assoc %1 %2 ~from-namespace) into-map# new-symbols#)]

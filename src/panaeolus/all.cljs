@@ -1,24 +1,35 @@
-(ns panaeolus.all
-  (:require
-   panaeolus.algo.seq
-   panaeolus.algo.seq-algo
-   panaeolus.engine
-   [panaeolus.broker :refer [P]]
-   panaeolus.fx
-   panaeolus.algo.control
-   panaeolus.orchestra-parser
-   [panaeolus.orchestra-parser :as p]
-   panaeolus.algo.pitch
-   panaeolus.instruments.tr808
-   panaeolus.instruments.fof
-   panaeolus.instruments.drone
-   panaeolus.instruments.sampler
-   panaeolus.instruments.synths
-   panaeolus.instruments.perc
-   panaeolus.instruments.plucked
-   panaeolus.instruments.oscil-bank)
-  (:require-macros [panaeolus.macros :refer [ demo -> forever]]))
+(ns panaeolus.all)
 
+(require
+ 'panaeolus.algo.seq
+ 'panaeolus.algo.seq-algo
+ 'panaeolus.engine
+ '[panaeolus.broker :refer [P]]
+ 'panaeolus.fx
+ 'panaeolus.algo.control
+ 'panaeolus.orchestra-parser
+ '[panaeolus.orchestra-parser :as p]
+ 'panaeolus.algo.pitch
+ 'panaeolus.instruments.tr808
+ 'panaeolus.instruments.fof
+ 'panaeolus.instruments.drone
+ 'panaeolus.instruments.sampler
+ 'panaeolus.instruments.synths
+ 'panaeolus.instruments.perc
+ 'panaeolus.instruments.plucked
+ 'panaeolus.instruments.oscil-bank)
+
+;; VERY HACKY
+(swap! cljs.env/*compiler* assoc-in
+       [:cljs.analyzer/namespaces
+        'panaeolus.all
+        :use-macros]
+       '{demo panaeolus.macros,
+         -> panaeolus.macros,
+         forever panaeolus.macros,
+         pull-macros panaeolus.macros})
+
+(require-macros '[panaeolus.macros :refer [pull-macros demo -> forever]])
 
 (defn pull-panaeolus []
   (panaeolus.macros/pull-symbols 'panaeolus.broker)
@@ -36,24 +47,7 @@
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.perc) 
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.plucked)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.drone) 
-  (panaeolus.macros/pull-macros  'panaeolus.all)
-  ;; (panaeolus.macros/pull-macros  'panaeolus.macros)
-  )
+  (panaeolus.macros/pull-macros  'panaeolus.all))
 
 (pull-panaeolus)
-
-(comment
-  (pat 'melody1 (panaeolus.instruments.tr808/mid_conga)
-       (-> (assoc :dur [1 1 1 0.25 0.125 0.125 0.5])
-           (assoc :kill true)))
-
-  (panaeolus.broker/pattern-loop-queue
-   (do (panaeolus.instruments.tr808/low_conga)
-       (-> {:dur [1 1 1 -0.25 0.25 0.5]
-            :pattern-name :abc
-            :input-messages "i 2 0 0.1 -8 100"
-            :meter 4
-            :kill true
-            }
-           (assoc :dur [1 1 1 0.125 0.125 0.25 0.5])))))
 
