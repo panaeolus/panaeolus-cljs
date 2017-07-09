@@ -1,45 +1,47 @@
 (ns panaeolus.instruments.synths
   (:require [macchiato.fs :as fs]
             [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [Csound csound]] 
+            [panaeolus.engine :refer [csound-compile-file]] 
             [panaeolus.fx :refer [freeverb lofi flanger]])
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
 (definstrument "nuclear"
-  (fs/slurp "src/panaeolus/csound/orchestra/synth/nuclear.orc")
+  "src/panaeolus/csound/orchestra/synth/nuclear.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 200}
    :p6 {:lpf 500}})
 
 (definstrument "sweet"
-  (fs/slurp "src/panaeolus/csound/orchestra/synth/sweet.orc")
+  "src/panaeolus/csound/orchestra/synth/sweet.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 200}})
 
 (definstrument "asfm"
-  (fs/slurp "src/panaeolus/csound/orchestra/synth/asfm.orc")
+  "src/panaeolus/csound/orchestra/synth/asfm.orc"
   {:p3 {:dur 1}
    :p4 {:amp -6}
    :p5 {:freq 100}
    :p6 {:mod 3}
    :p7 {:index 1}})
 
+(csound-compile-file "src/panaeolus/csound/udo/Partial.udo")
+
 (definstrument "organ"
-  (fs/slurp "src/panaeolus/csound/orchestra/synth/organ.orc")
+  "src/panaeolus/csound/orchestra/synth/organ.orc"
   {:p3 {:dur 1}
    :p4 {:amp -10}
    :p5 {:freq 500}})
 
 (definstrument "hammer"
-  (fs/slurp "src/panaeolus/csound/orchestra/synth/hammer.orc")
+  "src/panaeolus/csound/orchestra/synth/hammer.orc"
   {:p3 {:dur 2}
    :p4 {:amp -12}
    :p5 {:freq 200}})
 
 (definstrument "scan"
-  (fs/slurp "src/panaeolus/csound/orchestra/synth/scan.orc")
+  "src/panaeolus/csound/orchestra/synth/scan.orc"
   {:p3 {:dur 2.5}
    :p4 {:amp -9}
    :p5 {:freq 140}
@@ -59,7 +61,7 @@
    :p19 {:y 0}}  )
 
 (definstrument "tb303"
-  (fs/slurp "src/panaeolus/csound/orchestra/synth/tb303.orc")
+  "src/panaeolus/csound/orchestra/synth/tb303.orc"
   {:p3 {:dur 0.1}
    :p4 {:amp -16}
    :p5 {:freq 90}
@@ -73,7 +75,7 @@
    :p13 {:filt 0}})
 
 (definstrument "wobbly"
-  (fs/slurp "src/panaeolus/csound/orchestra/synth/wobbly.orc")
+  "src/panaeolus/csound/orchestra/synth/wobbly.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 100}

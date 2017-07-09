@@ -6,7 +6,7 @@
   "scripts": {
     "repl": "cljs-boot lumo -K ./.lumo_cache -n 5555",
     "test": "cljs-boot lumo -c src test/panaeolus/test_runner.cljs",
-    "gui": "./node_modules/.bin/electron front-end"
+    "gui": "./node_modules/.bin/electron gui"
   },
   "main": "panaeolus.all",
   "build": {

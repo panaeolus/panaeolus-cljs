@@ -5,7 +5,7 @@
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
 (definstrument "pluck"
-  (fs/slurp "src/panaeolus/csound/orchestra/pluck/pluck.orc")
+  "src/panaeolus/csound/orchestra/pluck/pluck.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 90}

@@ -2,8 +2,14 @@
   (:import [goog.string format])
   (:require-macros [panaeolus.macros :refer [define-fx]]))
 
+(define-fx "freq-shift"
+  nil
+  (fn [aL aR freq]
+    (format "\n %s freqShift %s \n %s freqShift %s \n" aL freq aR freq))
+  [:freq 1.2])
 
 (define-fx "reverb"
+  nil
   (fn [aL aR mix]
     (str
      (format "\n chnmix %s*%s, \"RvbL\" \n chnmix %s*%s, \"RvbR\" \n" aL mix aR mix)
@@ -12,6 +18,7 @@
 
 ;;BROKEN!!
 (define-fx "freeverb"
+  nil
   (fn [aL aR room damp sr]
     (str (format"\n%s, %s freeverb %s, %s, %s, %s, %s\n" aL aR aL aR room damp sr)
          "kRvbEnv expsegr 1, p3, 1, p3*2, .01\n"
@@ -19,11 +26,13 @@
   [:room 0.9 :damp 0.35 :sr 44100])
 
 (define-fx "lofi"
+  "src/panaeolus/csound/fx/lofi.udo"
   (fn [aL aR bits fold]
     (format"\n%s, %s LoFiS  %s, %s, %s, %s\n" aL aR aL aR bits fold))
   [:bits 6 :fold 0.1])
 
 (define-fx "flanger"
+  "src/panaeolus/csound/fx/flanger.udo"
   (fn [aL aR rate depth delay fback wet shape]
     (format "\n %s, %s Flanger_stereo %s, %s, %s, %s, %s, %s, %s, %s \n"
             aL aR aL aR rate depth delay fback wet shape))
@@ -31,6 +40,7 @@
    :wet 1 :shape 1])
 
 (define-fx "delayl"
+  "src/panaeolus/csound/fx/delay.udo"
   (fn [aL aR base layers ival shape
        scatter spread fback hpf
        lpf mode]
@@ -41,36 +51,42 @@
    :fback 0.95 :hpf 70 :lpf 70 :mode 1])
 
 (define-fx "perc"
+  nil
   (fn [aL aR dur exp]
     (format "\np3=%f\naPercEnv expon 1,%f,%f\n%s*=aPercEnv\n%s*=aPercEnv\n"
             dur dur exp aL aR))
   [:dur 0.4 :exp 0.1])
 
 (define-fx "butbp"
+  nil
   (fn [aL aR center band]
     (format "\n%s butbp %s, %f,%f\n\n%s butbp %s, %f,%f\n"
             aL aL center band aR aR center band))
   [:center 1000 :band 100])
 
 (define-fx "buthp"
+  nil
   (fn [aL aR cutoff]
     (format "\n%s buthp %s,%f\n\n%s buthp %s, %f\n"
             aL aL cutoff aR aR cutoff))
   [:cutoff 200])
 
 (define-fx "butlp"
+  nil
   (fn [aL aR cutoff]
     (format "\n%s butlp %s,%f\n\n%s butlp %s, %f\n"
             aL aL cutoff aR aR cutoff))
   [:cutoff 1000])
 
 (define-fx "vibrato"
+  "src/panaeolus/csound/fx/vibrato.udo"
   (fn [aL aR freq delay1 delay2]
     (format "\n%s,%s Vibrato %s,%s,%s,%s,%s,giSine\n"
             aL aR aL aR freq delay1 delay2))
   [:freq 5.5 :delay1 0.1 :delay2 1.2])
 
 (define-fx "distort"
+  nil
   (fn [aL aR dist]
     (let [dist (max 0.05 dist)]
       (format (str "\n%s distort %s*exp(%f), %f,giDrone \n"
@@ -79,6 +95,7 @@
   [:dist 0.5])
 
 (define-fx "binauralize"
+  "src/panaeolus/csound/fx/binauralize.udo"
   (fn [aL aR cent diff]
     (format "\n%s,%s binauralize %s,%s,%s\n"
             aL aR aL cent diff))

@@ -5,7 +5,7 @@
   (:require-macros [panaeolus.macros :refer [definstrument]]))
 
 (definstrument "sruti"
-  (fs/slurp "src/panaeolus/csound/orchestra/drone/sruti.csd")
+  "src/panaeolus/csound/orchestra/drone/sruti.csd"
   {:p3 {:dur 1}
    :p4 {:amp -22}
    :p5 {:freq 100}

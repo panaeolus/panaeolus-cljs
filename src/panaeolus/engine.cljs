@@ -2,10 +2,13 @@
   (:require [cljs.core.async :as async
              :refer [<! >! chan timeout take! put!]]
             [panaeolus.orchestra-init :refer [orc-init]]
-            [goog.object :as o])
+            [goog.object :as o]
+            [macchiato.fs :as fs])
   (:require-macros [cljs.core.async.macros
                     :refer [go go-loop]])
   (:import [goog.structs PriorityQueue]))
+
+(def expand-home-dir (js/require "expand-home-dir"))
 
 (declare csound)
 
@@ -57,3 +60,14 @@
     (do (.InputMessage csound Csound "i 9999 0 1 1")
         (println "\nRecording started....\n")
         (reset! panaeolus-is-recording? true))))
+
+;;;;;;;;;;;;;;;;;;;
+;; Useful tools ;;;
+;;;;;;;;;;;;;;;;;;;
+
+(defn slurp [file]
+  (fs/slurp file))
+
+(defn csound-compile-file [file]
+  (.CompileOrc csound Csound (fs/slurp (expand-home-dir file))))
+

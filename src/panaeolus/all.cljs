@@ -27,9 +27,12 @@
        '{demo panaeolus.macros,
          -> panaeolus.macros,
          forever panaeolus.macros,
-         pull-macros panaeolus.macros})
+         pull-macros panaeolus.macros
+         definstrument panaeolus.macros
+         define-fx panaeolus.macros})
 
-(require-macros '[panaeolus.macros :refer [pull-macros demo -> forever]])
+(require-macros '[panaeolus.macros :refer [pull-macros demo -> forever
+                                           definstrument define-fx]])
 
 (defn pull-panaeolus []
   (panaeolus.macros/pull-symbols 'panaeolus.broker)

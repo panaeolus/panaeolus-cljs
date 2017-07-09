@@ -1,15 +1,14 @@
 (ns panaeolus.macros
   (:require [lumo.repl :refer [get-current-ns]]
-            [macchiato.fs :as fs]
             [cljs.env :as env]
             [cljs.js :as cljs]
             [goog.string :as gstring]
             [clojure.string :as string]
-            [panaeolus.engine :refer [csound Csound pattern-registry]]
+            [panaeolus.engine :refer [csound Csound pattern-registry
+                                      expand-home-dir slurp]]
             panaeolus.orchestra-parser
             [panaeolus.broker :refer [pattern-loop-queue]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
-
 
 (defmacro pull-symbols [from-namespace]
   `(let [into-namespace# (symbol (lumo.repl/get-current-ns))
@@ -35,8 +34,9 @@
      nil))
 
 
-(defmacro definstrument [instr-name csound-string p-fields] 
-  `(let [keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
+(defmacro definstrument [instr-name csound-file p-fields] 
+  `(let [csound-string# (slurp (expand-home-dir ~csound-file))
+         keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
                             (->> ~p-fields
                                  vals
                                  (map keys)
@@ -48,7 +48,7 @@
          initial-param-cnt# (count (keys (dissoc or-map# :fn)))
          ;; Sends warning for wrong argument count, strange
          instr-number# (panaeolus.orchestra-parser/compile-csound-instrument
-                        ~instr-name ~csound-string {:param-cnt initial-param-cnt#})
+                        ~instr-name csound-string# {:param-cnt initial-param-cnt#})
          param-lookup-map# (panaeolus.orchestra-parser/fold-hashmap ~p-fields)
          ;; _# (prn "HEHEHR")
          ]
@@ -60,7 +60,7 @@
        ;; now implicitly recompile on every instr call
        (fn [pattern-name#]
          (let [[instr-number# env#] (panaeolus.orchestra-parser/compile-csound-instrument
-                                     ~instr-name ~csound-string
+                                     ~instr-name csound-string#
                                      (assoc instr-env# :param-cnt initial-param-cnt#
                                             :pattern-name pattern-name#))
                param-lookup-map# (merge param-lookup-map# (apply dissoc env# (keys instr-env#)))]
@@ -89,13 +89,15 @@
             instr-number#])))))
 
 (defmacro define-fx
-  [fx-name string-inject-fn param-vector]
+  [fx-name udo-file string-inject-fn param-vector]
   `(letfn [(param-key# [param-num#]
              (keyword (str "p" param-num#)))]
      (let [param-vector-keywords# (filter keyword? ~param-vector)           
            keys-vector# (->> param-vector-keywords#
                              (map (comp symbol name))
                              (into []))]
+       (when ~udo-file
+         (.CompileOrc csound Csound (slurp (expand-home-dir ~udo-file))))
        (defn ~(symbol fx-name)
          [~(symbol "&") {~(symbol "keys") keys-vector# :as fx-env#}]
          (let [fx-env# (merge (apply hash-map ~param-vector) fx-env#)]

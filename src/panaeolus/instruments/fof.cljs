@@ -5,9 +5,8 @@
             [panaeolus.fx :refer [freeverb lofi flanger]])
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
-
 (definstrument "priest"
-  (fs/slurp "src/panaeolus/csound/orchestra/fof/priest.orc")
+  "src/panaeolus/csound/orchestra/fof/priest.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 200}

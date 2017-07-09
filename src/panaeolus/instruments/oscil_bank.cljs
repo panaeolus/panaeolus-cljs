@@ -5,7 +5,7 @@
   (:require-macros [panaeolus.macros :refer [definstrument demo]]))
 
 (definstrument "bass_trombone"
-  (fs/slurp "src/panaeolus/csound/orchestra/oscbnk/bass_trombone.orc")
+  "src/panaeolus/csound/orchestra/oscbnk/bass_trombone.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:midi 36}

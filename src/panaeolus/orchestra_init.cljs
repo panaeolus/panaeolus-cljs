@@ -37,18 +37,10 @@
   endin
   ")
 
-(def ^:private orc-init-udo
-  (fs/slurp "src/panaeolus/csound/udo/Partial.udo"))
-
 (def ^:private orc-init-fx
   (str
-   (fs/slurp "src/panaeolus/csound/fx/flanger.udo") "\n"
-   (fs/slurp "src/panaeolus/csound/fx/lofi.udo") "\n"
-   (fs/slurp "src/panaeolus/csound/fx/delay.udo") "\n"
    (fs/slurp "src/panaeolus/csound/fx/pitch_shifter.udo") "\n"
-   (fs/slurp "src/panaeolus/csound/fx/pitch_shifter_2.udo") "\n"
-   (fs/slurp "src/panaeolus/csound/fx/vibrato.udo") "\n"
-   (fs/slurp "src/panaeolus/csound/fx/binauralize.udo")))
+   (fs/slurp "src/panaeolus/csound/fx/pitch_shifter_2.udo") "\n"))
 
 (def ^:private orc-init-bottom
   "
@@ -113,6 +105,5 @@
        orc-init-globals
        orc-init-tables "\n"
        orc-init-instr-1 "\n"
-       orc-init-udo "\n"
        orc-init-fx "\n"
        orc-init-bottom))

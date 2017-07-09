@@ -83,7 +83,7 @@
     (max 1000 (get env [:sample]))))
 
 (definstrument "sampler"
-  (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")
+  "src/panaeolus/csound/orchestra/sampler/sampler.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:speed 1}
@@ -99,7 +99,7 @@
 ;;    :p7 {:loop 0}})
 
 (definstrument "nsampler"
-  (fs/slurp "src/panaeolus/csound/orchestra/sampler/nsampler.orc")
+  "src/panaeolus/csound/orchestra/sampler/nsampler.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}
@@ -111,7 +111,7 @@
 
 (definstrument "stl-kicks"
   ;; 17 Samples
-  (fs/slurp "src/panaeolus/csound/orchestra/sampler/sampler.orc")
+  "src/panaeolus/csound/orchestra/sampler/sampler.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:speed 1}
@@ -125,7 +125,7 @@
 
 (definstrument "stl-synth"
   ;; 30 samples
-  (fs/slurp "src/panaeolus/csound/orchestra/sampler/nsampler.orc")
+  "src/panaeolus/csound/orchestra/sampler/nsampler.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}
@@ -137,7 +137,7 @@
 
 (definstrument "stl-bass"
   ;; 30 samples
-  (fs/slurp "src/panaeolus/csound/orchestra/sampler/nsampler.orc")
+  "src/panaeolus/csound/orchestra/sampler/nsampler.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 440}

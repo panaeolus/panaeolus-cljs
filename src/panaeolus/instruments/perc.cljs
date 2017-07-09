@@ -6,7 +6,7 @@
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
 (definstrument "kick"
-  (fs/slurp "src/panaeolus/csound/orchestra/perc/kick.orc")
+  "src/panaeolus/csound/orchestra/perc/kick.orc"
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:freq 60.3}})
