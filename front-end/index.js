@@ -8,10 +8,10 @@ const lumoConnection = new net.Socket();
 // Hacky temp solution
 var logBuffer = "";
 
-
 let win
 
-var proc = spawn('./front-end/lumo', ['-c', 'src:~/.m2/repository/andare/andare/0.6.0/andare-0.6.0.jar:~/.m2/repository/macchiato/fs/0.0.6/fs-0.0.6.jar', '-k', './.lumo_cache','-n', '5555']);
+var proc = spawn('./node_modules/lumo-cljs/bin/lumo',
+		 ['-c', 'src:lib/andare-0.7.0.jar:lib/fs-0.1.0.jar', '-n', '5555', '-k', '.lumo_cache']);
 
 // proc.stdout.setEncoding('utf8');
 

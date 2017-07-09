@@ -4,7 +4,7 @@ window.onkeyup = function(evt) {
   var e = evt || window.event;
   var code = e.keyCode ? e.keyCode : e.charCode;
   if (code === 17) {
-    ctrlDown = true;
+    ctrlDown = false;
   }
 }
 
@@ -16,7 +16,7 @@ window.onkeydown = function(evt) {
   }
 
   if (ctrlDown && code === 13) {
-    evaluateSelectedText();
+    evaluateExpression();
   }
 }
 
@@ -53,11 +53,25 @@ window.onerror = function(message, url, linenumber) {
 }
 
 
-function evaluateSelectedText()
+function evaluateExpression()
 {
   var selectedText = editor.getSession().doc.getTextRange(editor.selection.getRange());
-  ipcRenderer.send('cljs-command', selectedText)
-  // console.log(selectedText);
+  
+  var sexpIndx = sexpAtPoint(editor.getValue(),
+			     editor.session.doc.positionToIndex(editor.getCursorPosition()));
+
+  if (selectedText.length === 0) {
+    if (sexpIndx) {
+      var sexp = editor.getSession().doc.getTextRange(
+	{start: editor.session.doc.indexToPosition(sexpIndx[0]),
+	 end: editor.session.doc.indexToPosition(sexpIndx[1])});
+      ipcRenderer.send('cljs-command', sexp);
+      // console.log(sexp, "SEXP");
+    }
+  } else {
+    ipcRenderer.send('cljs-command', selectedText);
+  }
+  // console.log(sexp, selectedText);
   // do something with the selected content
 }
 

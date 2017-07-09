@@ -1,12 +1,10 @@
 *~
 .\#*
 \#*\#
-*.jar
 *.class
 /.lein-*
 figwheel_server.log
 pom.xml
-/lib/
 /classes/
 /out/
 /target/
