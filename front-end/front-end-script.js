@@ -62,9 +62,20 @@ function evaluateExpression()
 
   if (selectedText.length === 0) {
     if (sexpIndx) {
+      var start = editor.session.doc.indexToPosition(sexpIndx[0]);
+      var end = editor.session.doc.indexToPosition(sexpIndx[1]);
+
+      // blink Expression
+      var _range = new Range(start['row'], 0, end['row'], 1);
+      _range.id = editor.session.addMarker(_range, "flashEval", "fullLine");
+      setTimeout(function(){
+	editor.session.removeMarker(_range.id);
+      }, 90);
+      
+      // send expression to lumo
       var sexp = editor.getSession().doc.getTextRange(
-	{start: editor.session.doc.indexToPosition(sexpIndx[0]),
-	 end: editor.session.doc.indexToPosition(sexpIndx[1])});
+	{start: start,
+	 end: end});
       ipcRenderer.send('cljs-command', sexp);
       // console.log(sexp, "SEXP");
     }
@@ -72,7 +83,6 @@ function evaluateExpression()
     ipcRenderer.send('cljs-command', selectedText);
   }
   // console.log(sexp, selectedText);
-  // do something with the selected content
 }
 
 const {ipcRenderer} = require('electron')
