@@ -135,7 +135,9 @@
                 (+ (->> (vec (take (:len env) (cycle dur')))
                         (remove #(or (zero? %) (neg? %)))
                         count)
-                   (or (* (:xtralen env) (quot (:len env) (count dur))) 0))
+                   (if-not (:added-len env)
+                     0
+                     (* (:added-len env) (quot (:len env) (count dur)))))
                 16))
         dur (if-let [xtim (:xtim env)]
               (if (seqable? xtim)
@@ -200,10 +202,12 @@
                        (recur
                         (rest param-keys)
                         (into params [param-name value]))))))
-          (do (prn input-messages)
-              (assoc env' :input-messages input-messages :dur (if (:uncycle? env')
-                                                                (:dur env')
-                                                                (fill-the-bar (:dur env') (:len env'))))))))))
+          (let [input-messages (if (string? (first input-messages))
+                                 (vector input-messages)
+                                 input-messages)]
+            (assoc env' :input-messages input-messages :dur (if (:uncycle? env')
+                                                              (:dur env')
+                                                              (fill-the-bar (:dur env') (:len env'))))))))))
 
 
 #_(apply (first (panaeolus.instruments.sampler/sampler :fx (panaeolus.fx/lofi)

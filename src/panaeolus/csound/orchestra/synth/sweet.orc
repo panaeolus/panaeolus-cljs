@@ -8,7 +8,7 @@ instr 1
   kAmpEnv linseg 0, iAmpAttack, 1, iAmpDecay, 0.0001
   iFreqEnvAttack = limit(idur*0.8, 0.01, 10)
   iFreqEnvDecay = idur - iFreqEnvAttack
-  ifreqEnv expseg 1, iFreqEnvAttack, 1.5, iFreqEnvDecay, 1
+  kFreqEnv expseg 1, iFreqEnvAttack, iFreqEnvDecay
   krand randomi ifreq/2, ifreq, 1
   aSaw1 vco2 kamp, ifreq*1.05, 2, sqrt(krand*0.06), sqrt(krand*0.6)
   aSaw2 vco2 kamp*0.9, ifreq, 2, sqrt(krand*0.07), sqrt(krand*0.7)
@@ -19,6 +19,6 @@ instr 1
   else
     aDeclick linseg 0, 0.02, 1, p3 - 0.05, 1, 0.02, 0, 0.01, 0
   endif
-  aFilt *= aDeclick
+  aFilt *= aDeclick*kFreqEnv
   outs  aFilt, aFilt
 endin

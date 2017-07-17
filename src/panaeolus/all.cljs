@@ -1,7 +1,7 @@
 (ns panaeolus.all)
 
 (require
- 'panaeolus.algo.seq
+ 'panaeolus.algo.nseq
  'panaeolus.algo.seq-algo
  'panaeolus.engine
  '[panaeolus.broker :refer [P]]
@@ -19,18 +19,6 @@
  'panaeolus.instruments.plucked
  'panaeolus.instruments.oscil-bank)
 
-;; VERY HACKY
-(swap! cljs.env/*compiler* assoc-in
-       [:cljs.analyzer/namespaces
-        'panaeolus.all
-        :use-macros]
-       '{demo panaeolus.macros,
-         -> panaeolus.macros,
-         forever panaeolus.macros,
-         pull-macros panaeolus.macros
-         definstrument panaeolus.macros
-         define-fx panaeolus.macros})
-
 (require-macros '[panaeolus.macros :refer [pull-macros demo -> forever
                                            definstrument define-fx]])
 
@@ -40,7 +28,7 @@
   (panaeolus.macros/pull-symbols 'panaeolus.fx)
   (panaeolus.macros/pull-symbols 'panaeolus.algo.control)
   (panaeolus.macros/pull-symbols 'panaeolus.algo.pitch)
-  (panaeolus.macros/pull-symbols 'panaeolus.algo.seq)
+  (panaeolus.macros/pull-symbols 'panaeolus.algo.nseq)
   (panaeolus.macros/pull-symbols 'panaeolus.algo.seq-algo)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.tr808)
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.oscil-bank)
@@ -52,5 +40,17 @@
   (panaeolus.macros/pull-symbols 'panaeolus.instruments.drone) 
   (panaeolus.macros/pull-macros  'panaeolus.all))
 
-(pull-panaeolus)
+;; VERY HACKY
+(do (swap! cljs.env/*compiler* assoc-in
+           [:cljs.analyzer/namespaces
+            'panaeolus.all
+            :use-macros]
+           '{demo panaeolus.macros,
+             -> panaeolus.macros,
+             forever panaeolus.macros,
+             pull-macros panaeolus.macros
+             definstrument panaeolus.macros
+             define-fx panaeolus.macros})
+    (pull-panaeolus)
+    nil)
 

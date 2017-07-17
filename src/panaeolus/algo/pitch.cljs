@@ -19,7 +19,7 @@
                                 (conj %1 (* operator %2))) [] (or (get env :freq)
                                                                   (get env [:freq]))))))
 
-(defn midi [env]
+(defn midinn [env]
   (letfn [(toMidi [freq]
             (reduce (fn [x y] (conj x (midi->freq y))) [] freq))]
     (assoc env :freq (let [freq (or (get env :freq)
@@ -32,12 +32,18 @@
 (defn scale [env root & mode]
   (let [freq (:freq env)
         mode (if-not (empty? mode)
-               (first mode) :pentatonic)]
+               (first mode) :pentatonic)
+        scale->pos (fn [r]
+                     (fn [f] (nth (scale-from-midi
+                                   r mode
+                                   :span (max (count freq) (apply max freq)))
+                                  f)))]
     (if (seqable? root)
       (assoc env :freq
              (reduce (fn [init r]
-                       (conj init (mapv (fn [f] (nth (scale-from-midi r mode :span (max (count freq) (apply max freq))) f)) freq))) [] root))
-      (assoc env :freq (mapv #(nth (scale-from-midi root mode :span (max (count freq) (apply max freq))) %) freq)))))
+                       (conj init (mapv (scale->pos r) freq))) [] root))
+      (assoc env :freq
+             (mapv #(nth (scale-from-midi root mode :span (max (count freq) (apply max freq))) %) freq)))))
 
 
 ;; (scale {:dur [1 1 1 1 1 1 1], :seq-parsed? true, :xtralen 0, :freq [0 0 1 3 2 0 7], :len 16, :kill true} :major)
