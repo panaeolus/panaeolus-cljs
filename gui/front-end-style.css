@@ -40,6 +40,24 @@ body {
     font-family: 'FiraMono', monospace;
 }
 
+#console::-webkit-scrollbar-track
+{
+    border: 1px solid black;
+    background-color: #000000;
+}
+
+#console::-webkit-scrollbar
+{
+    width: 10px;
+    background-color: #b6bac1;
+}
+
+#console::-webkit-scrollbar-thumb
+{
+    background-color: #4b4e51;	
+}
+
+
 .flashEval {
     position:absolute;
     background:rgba(100,200,100,0.5);
