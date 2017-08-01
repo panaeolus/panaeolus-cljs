@@ -1,56 +1,44 @@
-(ns panaeolus.all)
+(ns panaeolus.all
+  (:require panaeolus.algo.nseq
+            panaeolus.algo.seq-algo
+            panaeolus.engine
+            panaeolus.broker
+            panaeolus.fx
+            panaeolus.algo.control
+            panaeolus.orchestra-parser
+            panaeolus.algo.pitch
+            panaeolus.instruments.tr808
+            panaeolus.instruments.fof
+            panaeolus.instruments.drone
+            panaeolus.instruments.sampler
+            panaeolus.instruments.synths
+            panaeolus.instruments.perc
+            panaeolus.instruments.plucked
+            panaeolus.instruments.oscil-bank)
+  (:require-macros
+   [panaeolus.macros :refer [pull-macros demo -> forever
+                             definstrument define-fx
+                             pull-symbols]]))
 
-(require
- 'panaeolus.algo.nseq
- 'panaeolus.algo.seq-algo
- 'panaeolus.engine
- '[panaeolus.broker :refer [P]]
- 'panaeolus.fx
- 'panaeolus.algo.control
- 'panaeolus.orchestra-parser
- '[panaeolus.orchestra-parser :as p]
- 'panaeolus.algo.pitch
- 'panaeolus.instruments.tr808
- 'panaeolus.instruments.fof
- 'panaeolus.instruments.drone
- 'panaeolus.instruments.sampler
- 'panaeolus.instruments.synths
- 'panaeolus.instruments.perc
- 'panaeolus.instruments.plucked
- 'panaeolus.instruments.oscil-bank)
+(def panaeolus-all-requires
+  (keys (get-in @cljs.env/*compiler*
+                [:cljs.analyzer/namespaces
+                 'panaeolus.all
+                 :requires])))
 
-(require-macros '[panaeolus.macros :refer [pull-macros demo -> forever
-                                           definstrument define-fx]])
+(defn pull-panaeolus [into-namespace]
+  (run! #(panaeolus.macros/pull-symbols % into-namespace)
+        panaeolus-all-requires)
+  (panaeolus.macros/pull-macros 'panaeolus.all into-namespace))
 
-(defn pull-panaeolus []
-  (panaeolus.macros/pull-symbols 'panaeolus.broker)
-  (panaeolus.macros/pull-symbols 'panaeolus.engine)
-  (panaeolus.macros/pull-symbols 'panaeolus.fx)
-  (panaeolus.macros/pull-symbols 'panaeolus.algo.control)
-  (panaeolus.macros/pull-symbols 'panaeolus.algo.pitch)
-  (panaeolus.macros/pull-symbols 'panaeolus.algo.nseq)
-  (panaeolus.macros/pull-symbols 'panaeolus.algo.seq-algo)
-  (panaeolus.macros/pull-symbols 'panaeolus.instruments.tr808)
-  (panaeolus.macros/pull-symbols 'panaeolus.instruments.oscil-bank)
-  (panaeolus.macros/pull-symbols 'panaeolus.instruments.fof)
-  (panaeolus.macros/pull-symbols 'panaeolus.instruments.sampler)
-  (panaeolus.macros/pull-symbols 'panaeolus.instruments.synths)
-  (panaeolus.macros/pull-symbols 'panaeolus.instruments.perc) 
-  (panaeolus.macros/pull-symbols 'panaeolus.instruments.plucked)
-  (panaeolus.macros/pull-symbols 'panaeolus.instruments.drone) 
-  (panaeolus.macros/pull-macros  'panaeolus.all))
 
-;; VERY HACKY
-(do (swap! cljs.env/*compiler* assoc-in
-           [:cljs.analyzer/namespaces
-            'panaeolus.all
-            :use-macros]
-           '{demo panaeolus.macros,
-             -> panaeolus.macros,
-             forever panaeolus.macros,
-             pull-macros panaeolus.macros
-             definstrument panaeolus.macros
-             define-fx panaeolus.macros})
-    (pull-panaeolus)
-    nil)
+(doseq [namespace (keys (:cljs.analyzer/namespaces @cljs.env/*compiler*))]
+  (let [require-keys (keys (get-in @cljs.env/*compiler*
+                                   [:cljs.analyzer/namespaces
+                                    namespace
+                                    :requires]))
+        filterd (filter #(= 'panaeolus.all %) require-keys)]
+    (when-not (empty? filterd)
+      (panaeolus.all/pull-panaeolus namespace))))
+
 

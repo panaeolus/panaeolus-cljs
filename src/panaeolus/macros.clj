@@ -10,27 +10,33 @@
             [panaeolus.broker :refer [pattern-loop-queue]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
-(defmacro pull-symbols [from-namespace]
-  `(let [into-namespace# (symbol (lumo.repl/get-current-ns))
-         into-map# (get-in @env/*compiler* [:cljs.analyzer/namespaces
-                                            into-namespace#
-                                            :uses])
+(defmacro pull-symbols [from-namespace into-namespace]
+  `(let [;;into-namespace# (symbol (lumo.repl/get-current-ns))
+         into-map# (or (get-in @env/*compiler* [:cljs.analyzer/namespaces
+                                                ~into-namespace
+                                                :uses]) {})
          new-symbols# (keys (get-in @env/*compiler*
                                     [:cljs.analyzer/namespaces ~from-namespace :defs]))
          merged-map# (reduce #(assoc %1 %2 ~from-namespace) into-map# new-symbols#)]
      (swap! env/*compiler* assoc-in [:cljs.analyzer/namespaces
-                                     into-namespace#
+                                     ~into-namespace
                                      :uses] merged-map#)
      nil))
 
 
-(defmacro pull-macros [from-namespace]
-  `(let [into-namespace# (symbol (lumo.repl/get-current-ns))
+(defmacro pull-macros [from-namespace into-namespace]
+  `(let [;;into-namespace# (symbol (lumo.repl/get-current-ns))
          new-macros# (get-in @env/*compiler*
                              [:cljs.analyzer/namespaces ~from-namespace :use-macros])]
      (swap! env/*compiler* assoc-in [:cljs.analyzer/namespaces
-                                     into-namespace#
-                                     :use-macros] new-macros#)
+                                     ~into-namespace
+                                     :use-macros]
+            (merge
+             (or (get-in @cljs.env/*compiler*
+                         [:cljs.analyzer/namespaces
+                          ~into-namespace
+                          :use-macros]) {})
+             new-macros#))
      nil))
 
 

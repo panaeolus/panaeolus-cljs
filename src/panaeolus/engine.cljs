@@ -23,6 +23,7 @@
 
 
 (.SetOption csound Csound "-odac")
+(.SetOption csound Csound "-d")
 ;; (.SetOption csound Csound "-+rtaudio=alsa")
 (.CompileOrc csound Csound orc-init)
 (.Start csound Csound)
