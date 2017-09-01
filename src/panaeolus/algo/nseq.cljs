@@ -1,8 +1,7 @@
 (ns panaeolus.algo.nseq
   (:require [clojure.string :as string]
             [panaeolus.freq]
-            [instaparse.core :as insta ;;:refer-macros [defparser]
-             ])
+            [instaparse.core :as insta :refer-macros [defparser]])
   (:import [goog.string.isNumeric]
            [goog.string.toNumber]))
 
@@ -58,29 +57,54 @@
                    (vector? nseqv) :function
                    :else (throw (js/Error. (str "Missing string or vector in nseq"))))))
 
+#_((insta/parser
+    "<list> = token (<whitespace> token)*
+   <token> = nname | nnum | rest | simile
+   whitespace = #'\\s+'
+
+   nname = (letter digit)+ time?
+   nnum  = digit+ time?
+   time = (div | ext)*
+
+   div = <divided> digit+
+   ext = <extended> digit+
+   rest = <('_' | 'r' | 'R')>+ time?
+   simile = <('/')>+
+
+   <dotted> = '.'
+   <divided> = ':'
+   <extended> = '*'
+   <octave> = ',' | '\\''    
+   <letter> = #'[a-zA-Z]+'
+   <digit> = #'[0-9]+\\.?[0-9]*'") "")
+
+
+(defparser parser-nseq
+  "<list> = token (<whitespace> token)*
+   <token> = nname | nnum | rest | simile
+   whitespace = #'\\s+'
+
+   nname = (letter digit)+ time?
+   nnum  = digit+ time?
+   time = (div | ext)*
+
+   div = <divided> digit+
+   ext = <extended> digit+
+   rest = <('_' | 'r' | 'R')>+ time?
+   simile = <('/')>+
+
+   <dotted> = '.'
+   <divided> = ':'
+   <extended> = '*'
+   <octave> = ',' | '\\''    
+   <letter> = #'[a-zA-Z]+'
+   <digit> = #'[0-9]+\\.?[0-9]*'")
+
+
 (defmethod nseq :parser
   [env nseq-s & grid+len]
   (let [res (->> nseq-s
-                 ((insta/parser
-                   "<list> = token (<whitespace> token)*
-                   <token> = nname | nnum | rest | simile
-                   whitespace = #'\\s+'
-
-                   nname = (letter digit)+ time?
-                   nnum  = digit+ time?
-                   time = (div | ext)*
-
-                   div = <divided> digit+
-                   ext = <extended> digit+
-                   rest = <('_' | 'r' | 'R')>+ time?
-                   simile = <('/')>+
-
-                   <dotted> = '.'
-                   <divided> = ':'
-                   <extended> = '*'
-                   <octave> = ',' | '\\''    
-                   <letter> = #'[a-zA-Z]+'
-                   <digit> = #'[0-9]+\\.?[0-9]*'"))
+                 parser-nseq
                  (insta/transform
                   {:nname (fn [nname octave time]
                             (let [freq (process-nname (str nname octave))
@@ -121,7 +145,6 @@
                    added-len)))))))
 
 ;; (apply conj (vec '(1 1.5)) '(2 3))
-
 
 
 (defmethod nseq :function

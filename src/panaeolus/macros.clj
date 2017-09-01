@@ -4,8 +4,8 @@
             [cljs.js :as cljs]
             [goog.string :as gstring]
             [clojure.string :as string]
-            [panaeolus.engine :refer [csound Csound pattern-registry
-                                      expand-home-dir slurp]]
+            [panaeolus.engine :refer [csound pattern-registry
+                                      expand-home-dir slurp] :as engine]
             panaeolus.orchestra-parser
             [panaeolus.broker :refer [pattern-loop-queue]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
@@ -55,9 +55,7 @@
          ;; Sends warning for wrong argument count, strange
          instr-number# (panaeolus.orchestra-parser/compile-csound-instrument
                         ~instr-name csound-string# {:param-cnt initial-param-cnt#})
-         param-lookup-map# (panaeolus.orchestra-parser/fold-hashmap ~p-fields)
-         ;; _# (prn "HEHEHR")
-         ]
+         param-lookup-map# (panaeolus.orchestra-parser/fold-hashmap ~p-fields)]
      (defn ~(symbol instr-name) 
        [~(symbol "&") {~(symbol "keys") keys-vector#
                        :or or-map#
@@ -94,6 +92,7 @@
             or-map#
             instr-number#])))))
 
+
 (defmacro define-fx
   [fx-name udo-file string-inject-fn param-vector]
   `(letfn [(param-key# [param-num#]
@@ -103,7 +102,7 @@
                              (map (comp symbol name))
                              (into []))]
        (when ~udo-file
-         (.CompileOrc csound Csound (slurp (expand-home-dir ~udo-file))))
+         (engine/compile-orc csound (slurp (expand-home-dir ~udo-file))))
        (defn ~(symbol fx-name)
          [~(symbol "&") {~(symbol "keys") keys-vector# :as fx-env#}]
          (let [fx-env# (merge (apply hash-map ~param-vector) fx-env#)]
@@ -134,8 +133,8 @@
      ((:recompile-fn (nth instr# 2)))
      (if (or (vector? (first instr#))
              (list? (first instr#)))
-       (run! #(.InputMessage csound Csound %) (map #((first %) [:dur] dur#) instr#))
-       (.InputMessage csound Csound ((first instr#) :dur dur#)))))
+       (run! #(engine/input-message csound %) (map #((first %) [:dur] dur#) instr#))
+       (engine/input-message csound ((first instr#) :dur dur#)))))
 
 (defmacro forever [instr & dur]
   `(let [instr# (~instr nil)
@@ -147,14 +146,14 @@
        (if-let [instrnum# (some #{p1#} (:forever @pattern-registry))]
          (do
            (swap! pattern-registry assoc :forever (disj (:forever @pattern-registry) p1#))
-           (.InputMessage csound Csound ((first instr#) [:dur] dur# ;;[:p1] (str "-" instrnum#)
+           (engine/input-message csound ((first instr#) [:dur] dur# ;;[:p1] (str "-" instrnum#)
                                          )))
          (do
            (swap! pattern-registry assoc :forever (conj (:forever @pattern-registry) p1#))
-           (.InputMessage csound Csound (let [f# ((first instr#) [:dur] (str "-" dur#))]
+           (engine/input-message csound (let [f# ((first instr#) [:dur] (str "-" dur#))]
                                           f#)))))))
 
-(defmacro -> [& forms]
+(defmacro custom-thread* [& forms]
   (loop [x {}, forms forms]
     (if forms
       (let [form (first forms)
@@ -163,3 +162,18 @@
                        (list form x))]
         (recur threaded (next forms)))
       x)))
+
+(defmacro pat [pattern-name instr env]
+  `(let [env# ~(apply custom-thread* env)]
+     (if (:kill env#)
+       (panaeolus.broker/pattern-loop-queue
+        (assoc env# :pattern-name ~(str pattern-name)))
+       (let [instr# (~instr ~pattern-name)
+             instr# (if (vector? instr#)
+                      instr# (apply instr# (mapcat identity env#)))] 
+         (when-not (or (empty? env#) (nil? env#))
+           (panaeolus.broker/pattern-loop-queue
+            (merge (panaeolus.orchestra-parser/ast-input-messages-builder
+                    (assoc env# :pattern-name ~(name pattern-name)) instr#)
+                   {:pattern-name ~(str pattern-name)
+                    :recompile-fn (:recompile-fn (nth instr# 2))})))))))

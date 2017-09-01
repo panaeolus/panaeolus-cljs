@@ -1,5 +1,5 @@
 (ns panaeolus.orchestra-parser
-  (:require [panaeolus.engine :refer [csound Csound]]
+  (:require [panaeolus.engine :refer [csound] :as engine]
             [clojure.string :as string]
             [macchiato.fs :as fs]))
 
@@ -63,7 +63,7 @@
             ;; _ (prn "instr-name: " name "INSTR NUMBER: " instr-number)
             instr-string (replace-instr-number instr instr-number)
             [instr-string env] (insert-zak-and-fx instr-string env)
-            env (assoc env :recompile-fn (fn [] (.CompileOrc csound Csound instr-string)))]
+            env (assoc env :recompile-fn (fn [] (engine/compile-orc csound instr-string)))]
         [instr-number env])
       (let [instr-number (->> @csound-instrument-map
                               vals
@@ -72,7 +72,7 @@
             _ (println "Csound instrument: " name "loaded.")
             instr-string (replace-instr-number instr instr-number)
             [instr-string env] (insert-zak-and-fx instr-string env)
-            env (assoc env :recompile-fn (fn [] (.CompileOrc csound Csound instr-string)))
+            env (assoc env :recompile-fn (fn [] (engine/compile-orc csound instr-string)))
             ;;_ (prn "compiled-env2: " env)
             ]
         ;; (.CompileOrc csound Csound instr-string)

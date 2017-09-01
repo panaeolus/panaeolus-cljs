@@ -1,7 +1,7 @@
 (ns panaeolus.instruments.tr808
   (:require [macchiato.fs :as fs]
-            [panaeolus.engine :refer [Csound csound]] 
             [panaeolus.fx :refer [freeverb lofi]]
+            [panaeolus.engine :refer [csound expand-home-dir slurp]]
             panaeolus.orchestra-parser)
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 

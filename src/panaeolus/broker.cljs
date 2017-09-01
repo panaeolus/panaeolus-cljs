@@ -1,8 +1,8 @@
 (ns panaeolus.broker
   (:require
    [cljs.core.async :refer [<! >! put! chan timeout] :as async]
-   [panaeolus.engine :refer [poll-channel csound Csound
-                             pattern-registry bpm!]]
+   [panaeolus.engine :refer [poll-channel csound
+                             pattern-registry bpm!] :as engine]
    [goog.string :as gstring]
    [panaeolus.orchestra-parser :refer [ast-input-messages-builder]])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
@@ -93,7 +93,7 @@
                           (first initial-queue))
                   queue-buffer initial-queue
                   new-user-data nil
-                  last-tick  (.GetCurrentTimeSamples csound Csound)
+                  last-tick  (engine/get-current-time-samples csound)
                   stop? false
                   last-fx (or initial-fx "")]
           (let [{:keys [pause kill stop? dur input-messages meter fx new-len]} new-user-data
@@ -124,8 +124,8 @@
                                  mod-div (first next-event))
                       wait-chn (chan)]
                   (loop []
-                    (if (<= timestamp (.GetCurrentTimeSamples csound Csound))
-                      (do (.InputMessage csound Csound (second next-event))
+                    (if (<= timestamp (engine/get-current-time-samples csound))
+                      (do (engine/input-message csound (second next-event))
                           (put! wait-chn true))
                       (do (<! (timeout 1))
                           (recur))))                
@@ -140,7 +140,7 @@
                            (pop queue)
                            queue-buffer
                            (async/poll! user-input-channel)
-                           (.GetCurrentTimeSamples csound Csound)
+                           (engine/get-current-time-samples csound)
                            stop?
                            (if (and new-user-data
                                     (not (:fx new-user-data)))
@@ -160,7 +160,7 @@
                        (if stop?
                          (<! user-input-channel)
                          (async/poll! user-input-channel))
-                       (.GetCurrentTimeSamples csound Csound)
+                       (engine/get-current-time-samples csound)
                        false
                        (if (and new-user-data
                                 (not (:fx new-user-data)))
@@ -238,16 +238,6 @@
     :input-messages "i 2 0 0.01 2"
     :meter 0
     :kill true
-    })
-
-  (.EvalCode csound Csound "giSigmoid ftgen  0, 0, 1024, 19, 0.5, 0.5, 270, 0.5")
-  (.ScoreEvent csound Csound "i" #js [2 0 1])
-  (.InputMessage csound Csound "i 2 0 1")
-  (dur->event-queue [1 1 1 1] #queue []))
-
-(go (let [event-c (chan)]
-      (>! poll-channel [0 300 event-c])
-      (when (<! event-c)
-        (.InputMessage csound Csound "i 2 0 1"))))
+    }))
 
 

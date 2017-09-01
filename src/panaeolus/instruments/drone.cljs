@@ -1,7 +1,7 @@
 (ns panaeolus.instruments.drone
   (:require [macchiato.fs :as fs]
             [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [Csound csound]])
+            [panaeolus.engine :refer [csound]])
   (:require-macros [panaeolus.macros :refer [definstrument]]))
 
 (definstrument "sruti"

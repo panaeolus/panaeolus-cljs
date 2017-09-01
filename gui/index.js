@@ -47,7 +47,7 @@ function createWindow () {
     // });
 
     var triggerPanaeolus = function () {
-	lumoConnection.write(`(require 'panaeolus.all) \n`);
+	lumoConnection.write(`(in-ns 'panaeolus.gui)(require 'panaeolus.all)(load-file "src/panaeolus/all.cljs")`);
     };
     
     setTimeout(() => {

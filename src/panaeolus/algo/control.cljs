@@ -1,7 +1,7 @@
 (ns panaeolus.algo.control
   (:require
    [cljs.core.async :refer [>! put!]]
-   [panaeolus.engine :refer [pattern-registry csound Csound]])
+   [panaeolus.engine :refer [pattern-registry csound] :as engine])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:import [cljs.core.async.impl.channels]))
 
@@ -37,7 +37,7 @@
 
 
 (defn killall []
-  (go (run! #(.InputMessage csound Csound (str "i " % " 0 -1"))
+  (go (run! #(engine/input-message csound (str "i " % " 0 -1"))
             (:forever @pattern-registry))
       (loop [c (vals (dissoc @pattern-registry :forever))] 
         (if (empty? c)
