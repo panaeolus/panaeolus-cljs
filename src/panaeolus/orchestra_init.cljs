@@ -19,8 +19,9 @@
 (def ^:private orc-init-globals
   (format "gkRecording init 0 \n
            gSRecordBaseLocation init \"%s\"\n
-           gSRecordLocation init \"\"\n "
-          (expand-home-dir "~/Music")))
+           gSRecordLocation init \"\"\n
+           gkPanaeolusBPM init 60 \n
+" (expand-home-dir "~/Music")))
 
 
 (def ^:private orc-init-tables
@@ -30,17 +31,26 @@
    (fs/slurp "src/panaeolus/csound/tables/hammer.orc") "\n"
    (fs/slurp "src/panaeolus/csound/tables/scanned.orc")))
 
-
 (def ^:private orc-init-instr-1
-  "
-  instr 1
+  "instr 1
+  setksmps 1
+  kLastPhase init 0
+  kTicks     init 0
+  iTickResolution = 1024
+  kPhase phasor iTickResolution*(gkPanaeolusBPM/60)
+  if kPhase < kLastPhase then
+  kTicks += 1
+  chnset kTicks, \"panaeolusClock\"
+  ;;printk 1, kTicks
+  endif
+  kLastPhase = kPhase
   endin
   ")
 
-(def ^:private orc-init-fx
-  (str
-   (fs/slurp "src/panaeolus/csound/fx/pitch_shifter.udo") "\n"
-   (fs/slurp "src/panaeolus/csound/fx/pitch_shifter_2.udo") "\n"))
+#_(def ^:private orc-init-fx
+    (str
+     (fs/slurp "src/panaeolus/csound/fx/pitch_shifter.udo") "\n"
+     (fs/slurp "src/panaeolus/csound/fx/pitch_shifter_2.udo") "\n"))
 
 (def ^:private orc-init-bottom
   "
@@ -101,9 +111,11 @@
   ")
 
 (def orc-init
-  (str orc-init-constants
-       orc-init-globals
+  (str orc-init-constants "\n"
        orc-init-tables "\n"
+       orc-init-globals "\n"
        orc-init-instr-1 "\n"
-       orc-init-fx "\n"
-       orc-init-bottom))
+       ;; NOTE GERA PITCH SHIFT FX!!
+       ;; orc-init-fx "\n"
+       orc-init-bottom "\n"
+       ))

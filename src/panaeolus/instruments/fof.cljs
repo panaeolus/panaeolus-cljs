@@ -1,8 +1,7 @@
 (ns panaeolus.instruments.fof
   (:require [macchiato.fs :as fs]
             [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [csound]] 
-            [panaeolus.fx :refer [freeverb lofi flanger]])
+            [panaeolus.engine :refer [csound]])
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
 (definstrument "priest"

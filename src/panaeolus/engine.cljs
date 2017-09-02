@@ -9,8 +9,11 @@
                     :refer [go go-loop]])
   (:import [goog.structs PriorityQueue]))
 
+;; (input-message csound "i 1 0 999999")
+;; (compile-orc csound orc-init)
+;; (get-control-channel csound "panaeolusClock")
 
-(def csound-target :wasm)
+(def csound-target :native)
 
 (def wasm-loaded-chan (chan 1))
 
@@ -32,7 +35,7 @@
   (.setFlagsFromString (js/require "v8") "--no-use_strict") ;; To be able to load web-audio-api
   (let [ksmps ((.cwrap csound-object "CsoundObj_getKsmps" #js ["number"] #js ["number"])
                csound-instance)
-        _ (println "KSMPS = " ksmps)
+        ;; _ (println "KSMPS = " ksmps)
         ;; (._CsoundObj_getKsmps csound-object csound-instance)
         input-count ((.cwrap csound-object "CsoundObj_getInputChannelCount" #js ["number"] #js ["number"])
                      csound-instance)
@@ -110,7 +113,8 @@
          reset
          play
          set-option
-         start)
+         start
+         get-control-channel)
 
 (defprotocol CsoundInterface
   (compile-orc [this orc])
@@ -119,13 +123,18 @@
   (reset [this])
   (play [this])
   (set-option [this option])
-  (start [this]))
+  (start [this])
+  (get-control-channel [this ctrl-channel]))
+
 
 (deftype CsoundWASM [csound-object csound-instance]
   CsoundInterface
   (compile-orc [this orc]
     ((.cwrap csound-object "CsoundObj_evaluateCode" "number" #js ["number" "string"])
      csound-instance orc))
+  (get-current-time-samples [this]
+    ((.cwrap csound-object "CsoundObj_getScoreTime" nil #js ["number"])
+     csound-instance))
   (input-message [this input-message]
     ((.cwrap csound-object "CsoundObj_readScore" "number" #js ["number" "string"])
      csound-instance input-message)
@@ -133,16 +142,22 @@
     )
   (reset [this] (._CsoundObj_reset csound-object csound-instance))
   (play [this] (._CsoundObj_play csound-object csound-instance))
-  (set-option [this option] (._CsoundObj_setOption csound-object csound-instance option))
+  (set-option [this option]
+    (._CsoundObj_setOption csound-object csound-instance option))
   (start [this]
     ((.cwrap csound-object "CsoundObj_prepareRT" nil #js ["number"])
      csound-instance)
     ((.cwrap csound-object "CsoundObj_compileOrc" "number" #js ["number" "string"])
      csound-instance "nchnls=2\n 0dbfs=1\n")
     ;;(._CsoundObj_compileOrc csound-object csound-instance "nchnls=2\n 0dbfs=1\n")
-    (wasm-start csound-object csound-instance)
+
+    ;; (wasm-start csound-object csound-instance)
+
     ;;(._CsoundObj_play csound-object csound-instance)
-    ))
+    )
+  (get-control-channel [this ctrl-channel]
+    ((.cwrap csound-object "CsoundObj_getControlChannel" #js ["number"] #js ["number" "string"])
+     csound-instance ctrl-channel)))
 
 (deftype CsoundNative [csound-object csound-instance]
   CsoundInterface
@@ -158,7 +173,9 @@
   (start [this]
     (.Start csound-object csound-instance)
     (.PerformAsync csound-object csound-instance
-                   (fn [] (.Stop csound-object csound-instance)))))
+                   (fn [] (.Stop csound-object csound-instance))))
+  (get-control-channel [this ctrl-channel]
+    (.GetControlChannel csound-object csound-instance ctrl-channel)))
 
 ;; (.setOption csound-object csound-instance "-odac")
 
@@ -175,8 +192,19 @@
                     :native (CsoundNative. csound-object csound-instance)))
       ;; (set-option csound "-odac")
       ;; (set-option csound "-d")
-      (compile-orc csound orc-init)
+      ;; (set-option csound "-m0")
+
+      ;; Mount tables
+      (.mkdir js/FS "/src")
+      (.mkdir js/FS "/src/panaeolus")
+      (.mkdir js/FS "/src/panaeolus/csound")
+      (.mkdir js/FS "/src/panaeolus/csound/tables")
+      (.mount js/FS js/NODEFS
+              #js {:root (str (.resolve (js/require "path") "./")
+                              "/src/panaeolus/csound/tables/")}
+              "src/panaeolus/csound/tables/")
       (start csound)
+      (compile-orc csound orc-init)
       ;; (input-message csound "i 10000 0 99999999999")
       )
   (do (def csound-object (create-csound-object csound-target))
@@ -189,7 +217,9 @@
       (set-option csound "-m0")
       (compile-orc csound orc-init)
       (start csound)
-      (input-message csound "i 10000 0 99999999999")))
+      (input-message csound "i 10000 0 99999999999")
+      ;; (input-message csound "i 1 0 99999999")
+      ))
 
 
 

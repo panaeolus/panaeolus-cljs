@@ -1,8 +1,7 @@
 (ns panaeolus.instruments.synths
   (:require [macchiato.fs :as fs]
             [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [csound-compile-file]] 
-            [panaeolus.fx :refer [freeverb lofi flanger]])
+            [panaeolus.engine :refer [csound-compile-file]])
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
 (definstrument "nuclear"

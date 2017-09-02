@@ -8,12 +8,14 @@
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
 
+(def tick-resolution 1024)
+
 (defn- calc-mod-div [meter durations]
   (let [meter (if meter
                 (if (< 0 meter) meter 0) 0)
         bar-length meter
         summed-durs (apply + (map Math/abs durations))]
-    (* 20000
+    (* tick-resolution
        (if (< 0 meter)
          (* bar-length
             (inc (quot (dec summed-durs) bar-length)))
@@ -58,7 +60,7 @@
 
 
 (defn- calculate-timestamp [current-time mod-div beat]
-  (let [beat (* beat 20000)
+  (let [beat (* beat tick-resolution)
         current-beat (max (mod current-time mod-div) 0)
         delta (- beat current-beat)]
     (if (neg? delta)
@@ -93,7 +95,7 @@
                           (first initial-queue))
                   queue-buffer initial-queue
                   new-user-data nil
-                  last-tick  (engine/get-current-time-samples csound)
+                  last-tick (engine/get-control-channel csound "panaeolusClock")
                   stop? false
                   last-fx (or initial-fx "")]
           (let [{:keys [pause kill stop? dur input-messages meter fx new-len]} new-user-data
@@ -123,8 +125,9 @@
                                  last-tick
                                  mod-div (first next-event))
                       wait-chn (chan)]
+                  ;; (prn "timestamp: " timestamp "clock: " (engine/get-control-channel csound "panaeolusClock"))
                   (loop []
-                    (if (<= timestamp (engine/get-current-time-samples csound))
+                    (if (<= timestamp (engine/get-control-channel csound "panaeolusClock"))
                       (do (engine/input-message csound (second next-event))
                           (put! wait-chn true))
                       (do (<! (timeout 1))
@@ -140,7 +143,7 @@
                            (pop queue)
                            queue-buffer
                            (async/poll! user-input-channel)
-                           (engine/get-current-time-samples csound)
+                           (engine/get-control-channel csound "panaeolusClock")
                            stop?
                            (if (and new-user-data
                                     (not (:fx new-user-data)))
@@ -160,7 +163,7 @@
                        (if stop?
                          (<! user-input-channel)
                          (async/poll! user-input-channel))
-                       (engine/get-current-time-samples csound)
+                       (engine/get-control-channel csound "panaeolusClock")
                        false
                        (if (and new-user-data
                                 (not (:fx new-user-data)))

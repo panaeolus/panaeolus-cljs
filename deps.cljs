@@ -1,3 +1,5 @@
 {:foreign-libs 
  [{:file "lib/libcsound.js"
-   :provides ["libcsound"]}] }
+   :provides ["libcsound"]}
+  {:file "lib/FileList.js"
+   :provides ["file-list"]}]}

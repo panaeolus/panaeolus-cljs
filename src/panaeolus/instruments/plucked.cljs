@@ -1,6 +1,5 @@
 (ns panaeolus.instruments.plucked
   (:require [macchiato.fs :as fs]
-            [panaeolus.fx :refer [delayl freeverb flanger]]
             [panaeolus.engine :refer [csound]])
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 

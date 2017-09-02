@@ -100,3 +100,15 @@
     (format "\n%s,%s binauralize %s,%s,%s\n"
             aL aR aL cent diff))
   [:cent 1.01 :diff 1])
+
+(define-fx "pitch-shift"
+  "src/panaeolus/csound/fx/pitch_shifter_2.udo"
+  (fn [aL aR ratio feedback delay smooth]
+    (str
+     (format "\n%s pitchshifter aL,%s,%s,%s,%s,4, giTriangle2\n"
+             aL ratio feedback delay smooth)
+     (format "\n%s pitchshifter aL,%s,%s,%s,%s,4, giTriangle2\n"
+             aR ratio feedback delay smooth)))
+  [:ratio 1 :feedback 0.001 :delay 0.1 :smooth 1])
+
+

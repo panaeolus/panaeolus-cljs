@@ -24,10 +24,11 @@
      nil))
 
 
-(defmacro pull-macros [from-namespace into-namespace]
+(defmacro pull-macros [new-macros into-namespace]
   `(let [;;into-namespace# (symbol (lumo.repl/get-current-ns))
-         new-macros# (get-in @env/*compiler*
-                             [:cljs.analyzer/namespaces ~from-namespace :use-macros])]
+         ;; new-macros# (get-in @env/*compiler*
+         ;;                     [:cljs.analyzer/namespaces ~from-namespace :use-macros])
+         ]
      (swap! env/*compiler* assoc-in [:cljs.analyzer/namespaces
                                      ~into-namespace
                                      :use-macros]
@@ -36,7 +37,7 @@
                          [:cljs.analyzer/namespaces
                           ~into-namespace
                           :use-macros]) {})
-             new-macros#))
+             ~new-macros))
      nil))
 
 
@@ -102,7 +103,11 @@
                              (map (comp symbol name))
                              (into []))]
        (when ~udo-file
-         (engine/compile-orc csound (slurp (expand-home-dir ~udo-file))))
+         (if-let [slurpd# (slurp (expand-home-dir ~udo-file))]
+           (if (= :wasm engine/csound-target)
+             (js/setTimeout (fn [] (engine/compile-orc csound slurpd#)) 5000)
+             (engine/compile-orc csound slurpd#))
+           (println "Error file: " ~udo-file " not found!")))
        (defn ~(symbol fx-name)
          [~(symbol "&") {~(symbol "keys") keys-vector# :as fx-env#}]
          (let [fx-env# (merge (apply hash-map ~param-vector) fx-env#)]
@@ -153,18 +158,18 @@
            (engine/input-message csound (let [f# ((first instr#) [:dur] (str "-" dur#))]
                                           f#)))))))
 
-(defmacro custom-thread* [& forms]
-  (loop [x {}, forms forms]
-    (if forms
-      (let [form (first forms)
-            threaded (if (seq? form)
-                       (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                       (list form x))]
-        (recur threaded (next forms)))
-      x)))
+#_(defmacro custom-thread* [& forms]
+    (loop [x {}, forms forms]
+      (if forms
+        (let [form (first forms)
+              threaded (if (seq? form)
+                         (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                         (list form x))]
+          (recur threaded (next forms)))
+        x)))
 
-(defmacro pat [pattern-name instr env]
-  `(let [env# ~(apply custom-thread* env)]
+(defmacro pat [pattern-name instr & env]
+  `(let [env# (-> {} ~@env)]
      (if (:kill env#)
        (panaeolus.broker/pattern-loop-queue
         (assoc env# :pattern-name ~(str pattern-name)))
@@ -177,3 +182,4 @@
                     (assoc env# :pattern-name ~(name pattern-name)) instr#)
                    {:pattern-name ~(str pattern-name)
                     :recompile-fn (:recompile-fn (nth instr# 2))})))))))
+
