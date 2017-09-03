@@ -13,7 +13,7 @@
 ;; (compile-orc csound orc-init)
 ;; (get-control-channel csound "panaeolusClock")
 
-(def csound-target :native)
+(def csound-target :wasm)
 
 (def wasm-loaded-chan (chan 1))
 
@@ -143,7 +143,8 @@
   (reset [this] (._CsoundObj_reset csound-object csound-instance))
   (play [this] (._CsoundObj_play csound-object csound-instance))
   (set-option [this option]
-    (._CsoundObj_setOption csound-object csound-instance option))
+    ((.cwrap csound-object "CsoundObj_setOption" nil #js ["number" "string"])
+     csound-instance set-option))
   (start [this]
     ((.cwrap csound-object "CsoundObj_prepareRT" nil #js ["number"])
      csound-instance)
@@ -203,7 +204,11 @@
               #js {:root (str (.resolve (js/require "path") "./")
                               "/src/panaeolus/csound/tables/")}
               "src/panaeolus/csound/tables/")
+      ;; (set-option csound "-m0")
+      ;; (set-option csound "--messagelevel=0")
       (start csound)
+      ;; (set-option csound "-m0")
+      ;; (set-option csound "--messagelevel=0")
       (compile-orc csound orc-init)
       ;; (input-message csound "i 10000 0 99999999999")
       )
@@ -249,6 +254,10 @@
 (def poll-channel (chan (async/sliding-buffer 1024)))
 
 (def pattern-registry (atom {:forever #{}}))
+
+(defn get-pattern-reg-state []
+  (reverse (into '(:panaeolus-runtime)
+                 (keys (dissoc @pattern-registry :forever)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; METRONOME CLOCK CONTROLLER ;;

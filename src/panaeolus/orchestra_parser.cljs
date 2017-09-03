@@ -91,13 +91,13 @@
                              %3 [(first (keys %3))])) {} h-map))
 
 ;; Todo, create test for this
-(defn fill-the-bar [v len]
+(defn fill-the-bar [v meter]
   (let [cnt-v (count v)]
     (loop [filled-v []
            sum 0
            indx 0]
       (let [next (nth v (mod indx cnt-v))]
-        (if (< len (+ (Math/abs next) sum))
+        (if (< meter (+ (Math/abs next) sum))
           filled-v
           (recur (conj filled-v next)
                  (+ (Math/abs next) sum)
@@ -127,7 +127,7 @@
   (let [dur' (if-let [d (:dur env)]
                (if (vector? d) d [d])
                ;; Should not be possible to reach this case.
-               [1]) 
+               [0.25]) 
         dur (remove #(or (zero? %) (neg? %)) dur')
         len (if (:uncycle? env)
               (count dur)
@@ -205,9 +205,10 @@
           (let [input-messages (if (string? (first input-messages))
                                  (vector input-messages)
                                  input-messages)]
+            ;; (prn "dur from parser fillbar: " (fill-the-bar (:dur env') (:len env')))
             (assoc env' :input-messages input-messages :dur (if (:uncycle? env')
                                                               (:dur env')
-                                                              (fill-the-bar (:dur env') (:len env'))))))))))
+                                                              (fill-the-bar (:dur env') (:meter env'))))))))))
 
 
 #_(apply (first (panaeolus.instruments.sampler/sampler :fx (panaeolus.fx/lofi)

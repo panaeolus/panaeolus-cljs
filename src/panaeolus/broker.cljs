@@ -98,16 +98,18 @@
                   last-tick (engine/get-control-channel csound "panaeolusClock")
                   stop? false
                   last-fx (or initial-fx "")]
-          (let [{:keys [pause kill stop? dur input-messages meter fx new-len]} new-user-data
-                [queue-buffer mod-div-buffer] (if kill
-                                                [nil nil]
-                                                (if dur
-                                                  [(if (or (not (string? input-messages))
-                                                           (not (string? (first input-messages))))
-                                                     (mapv #(create-event-queue dur %) input-messages)
-                                                     (create-event-queue dur input-messages))
-                                                   (calc-mod-div (or new-len len meter) dur)]
-                                                  [queue-buffer mod-div-buffer]))
+          (let [{:keys [pause kill stop? dur input-messages meter fx]} new-user-data
+                [queue-buffer mod-div-buffer] (if (zero? index)
+                                                [queue-buffer mod-div-buffer]
+                                                (if kill
+                                                  [nil nil]
+                                                  (if dur
+                                                    [(if (or (not (string? input-messages))
+                                                             (not (string? (first input-messages))))
+                                                       (mapv #(create-event-queue dur %) input-messages)
+                                                       (create-event-queue dur input-messages))
+                                                     (calc-mod-div (or meter len) dur)]
+                                                    [queue-buffer mod-div-buffer])))
                 _ (when (and (not kill)
                              new-user-data
                              (not= (str last-fx) (str fx))) 
@@ -139,7 +141,7 @@
                            mod-div
                            mod-div-buffer
                            ;; meter
-                           (or new-len len)
+                           len
                            (pop queue)
                            queue-buffer
                            (async/poll! user-input-channel)
@@ -155,7 +157,7 @@
                        mod-div-buffer 
                        mod-div-buffer
                        ;; meter
-                       (or new-len len)
+                       len
                        (if (string? (first queue-buffer))
                          queue-buffer
                          (nth queue-buffer (mod loop-cnt (count queue-buffer))))

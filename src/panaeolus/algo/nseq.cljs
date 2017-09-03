@@ -19,9 +19,6 @@
       (panaeolus.freq/midi->freq nnum)
       nnum)))
 
-#_(defn ^:private process-parsed-dur [freq div-ext-v]
-    (case (first div-ext-v)
-      :div ))
 
 ;; Generte [freq dur] pairs
 
@@ -103,7 +100,11 @@
 
 (defmethod nseq :parser
   [env nseq-s & grid+len]
-  (let [res (->> nseq-s
+  (let [[grid len] grid+len
+        grid (/ 4 (or (:grid env) grid 4))
+        ;; grid' (/ 1 (/ grid 4))
+        len (or (:len env) len 16)
+        res (->> nseq-s
                  parser-nseq
                  (insta/transform
                   {:nname (fn [nname octave time]
@@ -116,32 +117,32 @@
                    :rest (fn [time]
                            (if-not time
                              -1
-                             (calculate-time-indicators nil time)))
-                   }))]
+                             (calculate-time-indicators nil time)))}))]
     (loop [res res
            freq []
            dur []
-           len 0
+           ;; len 0
            added-len 0]
       (if (empty? res)
-        (assoc env :dur dur :freq freq :len len :seq-parsed? true)
+        (assoc env :dur dur :freq freq :len len :seq-parsed? true
+               :meter (* grid len))
         
         ;; Ask if list/lazy-seq (is lazy from repeat in div)
         ;; and add it to the front of the res sequence.
         (if (and (not (number? (first res)))
                  (not (vector? (first res))))
           (recur (apply conj (vec (first res)) (rest res))
-                 freq dur len (+ added-len (dec (count (first res)))))
+                 freq dur (+ added-len (dec (count (first res)))))
           (if (vector? (first res))
             (recur (rest res)
                    (conj freq (ffirst res))
                    (conj dur (-> res first second))
-                   (inc len)
+                   ;; (inc len)
                    added-len)
             (recur (rest res)
                    freq
                    (conj dur (first res))
-                   len
+                   ;; len
                    added-len)))))))
 
 ;; (apply conj (vec '(1 1.5)) '(2 3))
@@ -156,9 +157,9 @@
   (when (some seqable? grid+len)
     (throw (js/Error. (str "ERROR IN SEQ"))))
   (let [[grid len] grid+len
-        grid (or (:grid env) grid 4)
-        grid' (/ 1 grid)
-        len' (or (:len env) len 16)] 
+        grid (/ 4 (or (:grid env) grid 4))
+        ;; grid' (/ 1 (/ grid 4))
+        len' (or (:len env) len 16)]
     (loop [v' nseqv
            notenum []
            dur []
@@ -173,7 +174,7 @@
                                (string/split fvs ":")
                                [fv nil])))
               rest? (cond
-                      (= '_ fv) (* -1 grid')
+                      (= '_ fv) (* -1 grid)
                       (and (number? fv) (neg? fv)) fv
                       :else false)
               key? (keyword? fv)
@@ -202,13 +203,15 @@
                  (into (subvec dur 0 (dec (count dur)))
                        (repeat key-is-numeric?
                                (/ (last dur) key-is-numeric?)))
-                 (conj dur grid')))
+                 (conj dur grid)))
            (if-not (nil? extra)
              (+ added-len (max 0 (dec (goog.string.toNumber extra))))
              (if key-is-numeric?
                (+ added-len (max 0 (dec key-is-numeric?)))
                added-len))))
         (assoc env :dur dur :seq-parsed? true :added-len added-len :freq notenum :len len
+               ;; For mod-div calculation
+               :meter (* grid len)
                ;; :seq-v nseqv
                ;; :seq-grid grid
                ;; :seq-len len
@@ -216,5 +219,6 @@
 
 
 ;; (nseq {} "as3*2.2 r d3:3 c3 r*3")
-
-;; (panaeolus.algo.nseq/nseq {} '[x _ x _ x _ 400 _ ] 1)
+#_(panaeolus.orchestra-parser/ast-input-messages-builder (panaeolus.algo.nseq/nseq {} '[x _ x _ x _ 400 _ ] 4 8)
+                                                         ((panaeolus.instruments.synths/sweet)))
+;; (panaeolus.algo.nseq/nseq {} '[x _ x _ x _ 400 _ ] 0.5 8)
