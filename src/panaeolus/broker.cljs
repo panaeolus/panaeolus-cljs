@@ -11,16 +11,17 @@
 (def tick-resolution 1024)
 
 (defn- calc-mod-div [meter durations]
-  (let [meter (if meter
-                (if (< 0 meter) meter 0) 0)
-        bar-length meter
-        summed-durs (apply + (map Math/abs durations))]
-    (* tick-resolution
-       (if (< 0 meter)
-         (* bar-length
-            (inc (quot (dec summed-durs) bar-length)))
-         summed-durs))))
-
+  (if (= engine/clock-source :link)
+    (max 1 meter)
+    (let [meter (if meter
+                  (if (< 0 meter) meter 0) 0)
+          bar-length meter
+          summed-durs (apply + (map Math/abs durations))]
+      (* tick-resolution
+         (if (< 0 meter)
+           (* bar-length
+              (inc (quot (dec summed-durs) bar-length)))
+           summed-durs)))))
 
 (defn- create-event-queue [durations input-messages]
   (let [input-messages (if (string? input-messages)
@@ -59,13 +60,26 @@
                                          (first input-messages))]))))))))))
 
 
-(defn- calculate-timestamp [current-time mod-div beat]
-  (let [beat (* beat tick-resolution)
-        current-beat (max (mod current-time mod-div) 0)
-        delta (- beat current-beat)]
-    (if (neg? delta)
-      (+ beat current-time (- mod-div current-beat))
-      (+ current-time delta))))
+(defn- calculate-timestamp [last-tick mod-div beat]
+  (if (= engine/clock-source :link)
+    (let [current-beat (max (mod last-tick mod-div) 0)
+          delta (- beat current-beat)]
+      (if (neg? delta)
+        (+ beat last-tick (- mod-div current-beat))
+        (+ last-tick delta)))
+    (let [beat (* beat tick-resolution)
+          current-beat (max (mod last-tick mod-div) 0)
+          delta (- beat current-beat)]
+      (if (neg? delta)
+        (+ beat last-tick (- mod-div current-beat))
+        (+ last-tick delta)))))
+
+
+(defn- read-clock []
+  (if (= :link engine/clock-source)
+    (do (engine/ableton-link-update)
+        (engine/ableton-link-get-beat))
+    (engine/get-control-channel csound "panaeolusClock")))
 
 
 (defn pattern-loop-queue [env]
@@ -95,8 +109,9 @@
                           (first initial-queue))
                   queue-buffer initial-queue
                   new-user-data nil
-                  last-tick (engine/get-control-channel csound "panaeolusClock")
+                  last-tick (read-clock)
                   stop? false
+                  cur-fx (or initial-fx "")
                   last-fx (or initial-fx "")]
           (let [{:keys [pause kill stop? dur input-messages meter fx]} new-user-data
                 [queue-buffer mod-div-buffer] (if (zero? index)
@@ -110,12 +125,7 @@
                                                        (create-event-queue dur input-messages))
                                                      (calc-mod-div (or meter len) dur)]
                                                     [queue-buffer mod-div-buffer])))
-                _ (when (and (not kill)
-                             new-user-data
-                             (not= (str last-fx) (str fx))) 
-                    (println "recompileing fx-changes...")
-                    ;; (prn new-user-data)
-                    (go ((get new-user-data :recompile-fn))))
+                
                 ;; _ (when new-user-data (prn "END OF CALC"))
                 ;; new-user-data nil
                 ]
@@ -129,7 +139,7 @@
                       wait-chn (chan)]
                   ;; (prn "timestamp: " timestamp "clock: " (engine/get-control-channel csound "panaeolusClock"))
                   (loop []
-                    (if (<= timestamp (engine/get-control-channel csound "panaeolusClock"))
+                    (if (<= timestamp (read-clock))
                       (do (engine/input-message csound (second next-event))
                           (put! wait-chn true))
                       (do (<! (timeout 1))
@@ -144,33 +154,41 @@
                            len
                            (pop queue)
                            queue-buffer
-                           (async/poll! user-input-channel)
-                           (engine/get-control-channel csound "panaeolusClock")
+                           (or (async/poll! user-input-channel)
+                               new-user-data)
+                           (read-clock)
                            stop?
-                           (if (and new-user-data
-                                    (not (:fx new-user-data)))
-                             ""
-                             (or fx last-fx)))))
-                (recur 0
-                       (inc a-index)
-                       (inc loop-cnt)
-                       mod-div-buffer 
-                       mod-div-buffer
-                       ;; meter
-                       len
-                       (if (string? (first queue-buffer))
+                           (or fx cur-fx)
+                           last-fx)))
+                ;;;;;;;;;;;;;;;;;
+                ;;; New round ;;;
+                ;;;;;;;;;;;;;;;;;
+                
+                (do
+                  (when (and (not kill)
+                             new-user-data
+                             (not= (str last-fx) (str cur-fx))) 
+                    (println "recompileing fx-changes...")
+                    ;; (prn new-user-data)
+                    (go ((get new-user-data :recompile-fn))))
+                  (recur 0
+                         (inc a-index)
+                         (inc loop-cnt)
+                         mod-div-buffer 
+                         mod-div-buffer
+                         ;; meter
+                         len
+                         (if (string? (first queue-buffer))
+                           queue-buffer
+                           (nth queue-buffer (mod loop-cnt (count queue-buffer))))
                          queue-buffer
-                         (nth queue-buffer (mod loop-cnt (count queue-buffer))))
-                       queue-buffer
-                       (if stop?
-                         (<! user-input-channel)
-                         (async/poll! user-input-channel))
-                       (engine/get-control-channel csound "panaeolusClock")
-                       false
-                       (if (and new-user-data
-                                (not (:fx new-user-data)))
-                         ""
-                         (or fx last-fx)))))))))))
+                         (if stop?
+                           (<! user-input-channel)
+                           (async/poll! user-input-channel))
+                         (read-clock)
+                         false
+                         nil
+                         (or cur-fx last-fx)))))))))))
 
 (defn P [pattern-name instr env]
   (if (:kill env)

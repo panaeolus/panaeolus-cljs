@@ -43,11 +43,12 @@
 
 (defmacro definstrument [instr-name csound-file p-fields] 
   `(let [csound-string# (slurp (expand-home-dir ~csound-file))
+         p-field-keys# (->> ~p-fields
+                            vals
+                            (map keys)
+                            (map (comp symbol name first)))
          keys-vector# (into [(symbol "dur") (symbol "amp") (symbol "freq")] 
-                            (->> ~p-fields
-                                 vals
-                                 (map keys)
-                                 (map (comp symbol name first))))
+                            p-field-keys#)
          keys-vector# (-> keys-vector# distinct)
          or-map# (merge {:dur 0.5}
                         (apply merge (vals ~p-fields)))
@@ -57,7 +58,7 @@
          instr-number# (panaeolus.orchestra-parser/compile-csound-instrument
                         ~instr-name csound-string# {:param-cnt initial-param-cnt#})
          param-lookup-map# (panaeolus.orchestra-parser/fold-hashmap ~p-fields)]
-     (defn ~(symbol instr-name) 
+     (defn ~(symbol instr-name)
        [~(symbol "&") {~(symbol "keys") keys-vector#
                        :or or-map#
                        :as instr-env#}]

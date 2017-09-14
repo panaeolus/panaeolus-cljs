@@ -4,6 +4,13 @@
             [panaeolus.engine :refer [csound-compile-file]])
   (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
 
+(definstrument "pulser"
+  "src/panaeolus/csound/orchestra/synth/pulser.orc"
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:freq 200}
+   :p6 {:env 1}})
+
 (definstrument "nuclear"
   "src/panaeolus/csound/orchestra/synth/nuclear.orc"
   {:p3 {:dur 1}

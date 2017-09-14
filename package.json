@@ -23,6 +23,7 @@
     }
   },
   "dependencies": {
+    "abletonlink": "git://github.com/hlolli/node-abletonlink.git#c5fe4dc0106e5eac69af757f734f2dfab38419af",
     "csound-api": "latest",
     "electron": "^1.6.11",
     "expand-home-dir": "0.0.3",

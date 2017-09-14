@@ -9,11 +9,10 @@
                     :refer [go go-loop]])
   (:import [goog.structs PriorityQueue]))
 
-;; (input-message csound "i 1 0 999999")
-;; (compile-orc csound orc-init)
-;; (get-control-channel csound "panaeolusClock")
 
 (def csound-target :wasm)
+
+(def clock-source :link)
 
 (def wasm-loaded-chan (chan 1))
 
@@ -107,6 +106,16 @@
                                  sample-count)))))))))
     nil))
 
+(defn wasm-mount-table-dir []
+  (.mkdir js/FS "/src")
+  (.mkdir js/FS "/src/panaeolus")
+  (.mkdir js/FS "/src/panaeolus/csound")
+  (.mkdir js/FS "/src/panaeolus/csound/tables")
+  (.mount js/FS js/NODEFS
+          #js {:root (str (.resolve (js/require "path") "./")
+                          "/src/panaeolus/csound/tables/")}
+          "src/panaeolus/csound/tables/"))
+
 (declare compile-orc
          get-current-time-samples
          input-message
@@ -143,9 +152,11 @@
   (reset [this] (._CsoundObj_reset csound-object csound-instance))
   (play [this] (._CsoundObj_play csound-object csound-instance))
   (set-option [this option]
-    ((.cwrap csound-object "CsoundObj_setOption" nil #js ["number" "string"])
-     csound-instance set-option))
+    ;; Broken
+    #_((.cwrap csound-object "CsoundObj_setOption" nil #js ["number" "string"])
+       csound-instance set-option))
   (start [this]
+    (wasm-mount-table-dir)
     ((.cwrap csound-object "CsoundObj_prepareRT" nil #js ["number"])
      csound-instance)
     ((.cwrap csound-object "CsoundObj_compileOrc" "number" #js ["number" "string"])
@@ -178,53 +189,23 @@
   (get-control-channel [this ctrl-channel]
     (.GetControlChannel csound-object csound-instance ctrl-channel)))
 
-;; (.setOption csound-object csound-instance "-odac")
 
 (declare csound csound-object csound-instance)
 
-(if (= :wasm csound-target)
-  (go (<! wasm-loaded-chan)
-      (println "Loaded libcsound.js")
-      (def csound-object (create-csound-object csound-target))
+(go (<! wasm-loaded-chan)
+    (println "Loaded libcsound.js")
+    (def csound-object (create-csound-object csound-target))
+    (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
+    (def csound (case csound-target
+                  :wasm (CsoundWASM. csound-object csound-instance)
+                  :native (CsoundNative. csound-object csound-instance)))
 
-      (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
-      (def csound (case csound-target
-                    :wasm (CsoundWASM. csound-object csound-instance)
-                    :native (CsoundNative. csound-object csound-instance)))
-      ;; (set-option csound "-odac")
-      ;; (set-option csound "-d")
-      ;; (set-option csound "-m0")
-
-      ;; Mount tables
-      (.mkdir js/FS "/src")
-      (.mkdir js/FS "/src/panaeolus")
-      (.mkdir js/FS "/src/panaeolus/csound")
-      (.mkdir js/FS "/src/panaeolus/csound/tables")
-      (.mount js/FS js/NODEFS
-              #js {:root (str (.resolve (js/require "path") "./")
-                              "/src/panaeolus/csound/tables/")}
-              "src/panaeolus/csound/tables/")
-      ;; (set-option csound "-m0")
-      ;; (set-option csound "--messagelevel=0")
-      (start csound)
-      ;; (set-option csound "-m0")
-      ;; (set-option csound "--messagelevel=0")
-      (compile-orc csound orc-init)
-      ;; (input-message csound "i 10000 0 99999999999")
-      )
-  (do (def csound-object (create-csound-object csound-target))
-      (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
-      (def csound (case csound-target
-                    :wasm (CsoundWASM. csound-object csound-instance)
-                    :native (CsoundNative. csound-object csound-instance)))
-      (set-option csound "-odac")
-      (set-option csound "-d")
-      (set-option csound "-m0")
-      (compile-orc csound orc-init)
-      (start csound)
-      (input-message csound "i 10000 0 99999999999")
-      ;; (input-message csound "i 1 0 99999999")
-      ))
+    (set-option csound "-odac")
+    (set-option csound "-d")
+    (set-option csound "-m0")
+    (start csound)
+    (compile-orc csound orc-init)
+    (input-message csound "i 10000 0 99999999999"))
 
 
 
@@ -259,10 +240,32 @@
   (reverse (into '(:panaeolus-runtime)
                  (keys (dissoc @pattern-registry :forever)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; METRONOME CLOCK CONTROLLER ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; METRONOME CLOCK/Ableton Link ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(def ableton-link* (js/require "abletonlink"))
+
+(def ableton-link (new ableton-link*))
+
+(defn ableton-link-enable []
+  (.enable ableton-link))
+
+(defn ableton-link-update []
+  (.update ableton-link))
+
+(defn ableton-link-get-beat []
+  (.-beat ableton-link))
+
+(defn ableton-link-get-phase []
+  (.-phase ableton-link))
+
+(defn ableton-link-set-bpm [bpm]
+  (set! (.-bpm ableton-link) bpm))
+
+(defn ableton-link-get-bpm []
+  (.-bpm ableton-link))
 
 (def bpm! nil)
 

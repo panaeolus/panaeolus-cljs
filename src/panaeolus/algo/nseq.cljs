@@ -218,7 +218,9 @@
                )))))
 
 
-;; (nseq {} "as3*2.2 r d3:3 c3 r*3")
+;; (nseq {} "as3*2 r d3:3 c3 r*3")
+;; (nseq {} [0 1 2 3 4])
+
 #_(panaeolus.orchestra-parser/ast-input-messages-builder (panaeolus.algo.nseq/nseq {} '[x _ x _ x _ 400 _ ] 4 8)
                                                          ((panaeolus.instruments.synths/sweet)))
 ;; (panaeolus.algo.nseq/nseq {} '[x _ x _ x _ 400 _ ] 0.5 8)
