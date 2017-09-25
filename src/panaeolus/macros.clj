@@ -7,8 +7,10 @@
             [panaeolus.engine :refer [csound pattern-registry
                                       expand-home-dir slurp] :as engine]
             panaeolus.orchestra-parser
-            [panaeolus.broker :refer [pattern-loop-queue]])
+            [panaeolus.broker :refer [pattern-loop-queue]]
+            [panaeolus.utils :as utils])
   (:require-macros [cljs.core.async.macros :refer [go]]))
+
 
 (defmacro pull-symbols [from-namespace into-namespace]
   `(let [;;into-namespace# (symbol (lumo.repl/get-current-ns))
@@ -58,48 +60,56 @@
          instr-number# (panaeolus.orchestra-parser/compile-csound-instrument
                         ~instr-name csound-string# {:param-cnt initial-param-cnt#})
          param-lookup-map# (panaeolus.orchestra-parser/fold-hashmap ~p-fields)]
-     (defn ~(symbol instr-name)
-       [~(symbol "&") {~(symbol "keys") keys-vector#
-                       :or or-map#
-                       :as instr-env#}]
-       ;; recompile-fn
-       ;; now implicitly recompile on every instr call
-       (fn [pattern-name#]
-         (let [[instr-number# env#] (panaeolus.orchestra-parser/compile-csound-instrument
-                                     ~instr-name csound-string#
-                                     (assoc instr-env# :param-cnt initial-param-cnt#
-                                            :pattern-name pattern-name#))
-               param-lookup-map# (merge param-lookup-map# (apply dissoc env# (keys instr-env#)))]
-           
-           [(fn [~(symbol "&") {~(symbol "keys") keys-vector#
-                                :as closure-env#}]
-              (let [
+     (def ~(vary-meta (symbol instr-name) assoc :arglists (list (->> p-fields
+                                                                     vals
+                                                                     (map keys)
+                                                                     (map (comp symbol name first))
+                                                                     (vec))
+                                                                (-> (dissoc (merge {:dur 0.5}
+                                                                                   (apply merge (vals p-fields)))
+                                                                            :fn)
+                                                                    vec flatten vec)))
+       (fn [~(symbol "&") {~(symbol "keys") keys-vector#
+                           :or or-map#
+                           :as instr-env#}]
+         ;; recompile-fn
+         ;; now implicitly recompile on every instr call
+         (fn [pattern-name#]
+           (let [[instr-number# env#] (panaeolus.orchestra-parser/compile-csound-instrument
+                                       ~instr-name csound-string#
+                                       (assoc instr-env# :param-cnt initial-param-cnt#
+                                              :pattern-name pattern-name#))
+                 param-lookup-map# (merge param-lookup-map# (apply dissoc env# (keys instr-env#)))]
+             
+             [(fn [~(symbol "&") {~(symbol "keys") keys-vector#
+                                  :as closure-env#}]
+                (let [
                   ;;;;;
-                    p-count# (:param-cnt env#)
-                    env-vector-formatted# (reduce-kv (fn [x# y# z#]
-                                                       (assoc x# (if (vector? y#) y# [y#]) z#)) {}
-                                                     (merge or-map# env#))
-                    final-env# (merge env-vector-formatted# closure-env#)]
-                (str "i " instr-number# " 0 "
-                     (clojure.string/join " " (for [param# (panaeolus.orchestra-parser/generate-p-keywords
-                                                            p-count#)]
-                                                (if (contains? (param# ~p-fields) :fn)
-                                                  ((get-in ~p-fields [param# :fn]) final-env#)
-                                                  (get final-env# (get param-lookup-map# param#))))))))
-            param-lookup-map#
-            ;; Final env for instrument
-            ;; are the two expressions the same?
-            (merge or-map# instr-env# {:recompile-fn (:recompile-fn env#)})
-            ;; Default param map
-            or-map#
-            instr-number#])))))
+                      p-count# (:param-cnt env#)
+                      env-vector-formatted# (reduce-kv (fn [x# y# z#]
+                                                         (assoc x# (if (vector? y#) y# [y#]) z#)) {}
+                                                       (merge or-map# env#))
+                      final-env# (merge env-vector-formatted# closure-env#)]
+                  (str "i " instr-number# " 0 "
+                       (clojure.string/join " " (for [param# (panaeolus.orchestra-parser/generate-p-keywords
+                                                              p-count#)]
+                                                  (if (contains? (param# ~p-fields) :fn)
+                                                    ((get-in ~p-fields [param# :fn]) final-env#)
+                                                    (get final-env# (get param-lookup-map# param#))))))))
+              param-lookup-map#
+              ;; Final env for instrument
+              ;; are the two expressions the same?
+              (merge or-map# instr-env# {:recompile-fn (:recompile-fn env#)})
+              ;; Default param map
+              or-map#
+              instr-number#]))))))
 
 
 (defmacro define-fx
   [fx-name udo-file string-inject-fn param-vector]
   `(letfn [(param-key# [param-num#]
              (keyword (str "p" param-num#)))]
-     (let [param-vector-keywords# (filter keyword? ~param-vector)           
+     (let [param-vector-keywords# (filter keyword? ~param-vector)
            keys-vector# (->> param-vector-keywords#
                              (map (comp symbol name))
                              (into []))]
@@ -109,27 +119,30 @@
              (js/setTimeout (fn [] (engine/compile-orc csound slurpd#)) 5000)
              (engine/compile-orc csound slurpd#))
            (println "Error file: " ~udo-file " not found!")))
-       (defn ~(symbol fx-name)
-         [~(symbol "&") {~(symbol "keys") keys-vector# :as fx-env#}]
-         (let [fx-env# (merge (apply hash-map ~param-vector) fx-env#)]
-           (fn [aL# aR# param-cnt#]
-             (let [param-nums# (range (inc param-cnt#)
-                                      (inc (+ param-cnt# (count param-vector-keywords#))))
-                   param-val-list# (partition 2 (interleave (map param-key# param-nums#)
-                                                            param-vector-keywords#))
-                   fx-name-key# (keyword ~fx-name)]
-               ;; Swap parameter name for p-field number
-               [(apply ~string-inject-fn aL# aR#
-                       (map (fn [s#] (str "p" s#)) param-nums#))
-                ;; Make a map of {:px [:fx-name :param-name]}
-                ;; and {[:fx-name :param-name] value}
-                (merge (reduce (fn [init# val#] (assoc init# (first val#)
-                                                       [fx-name-key# (second val#)]))
-                               {} param-val-list#)
-                       (reduce (fn [init# val#] (assoc init# [fx-name-key# (second val#)]
-                                                       (get fx-env# (second val#))))
-                               {} param-val-list#)
-                       {:param-cnt (last param-nums#)})])))))))
+       (def ~(vary-meta (symbol fx-name) assoc :arglists (list (->> (filter keyword? param-vector)
+                                                                    (map (comp symbol name))
+                                                                    (into []))
+                                                               param-vector))
+         (fn [~(symbol "&") fx-env#]
+           (let [fx-env# (utils/process-arguments ~param-vector fx-env#)]
+             (fn [aL# aR# param-cnt#]
+               (let [param-nums# (range (inc param-cnt#)
+                                        (inc (+ param-cnt# (count param-vector-keywords#))))
+                     param-val-list# (partition 2 (interleave (map param-key# param-nums#)
+                                                              param-vector-keywords#))
+                     fx-name-key# (keyword ~fx-name)]
+                 ;; Swap parameter name for p-field number
+                 [(apply ~string-inject-fn aL# aR#
+                         (map (fn [s#] (str "p" s#)) param-nums#))
+                  ;; Make a map of {:px [:fx-name :param-name]}
+                  ;; and {[:fx-name :param-name] value}
+                  (merge (reduce (fn [init# val#] (assoc init# (first val#)
+                                                         [fx-name-key# (second val#)]))
+                                 {} param-val-list#)
+                         (reduce (fn [init# val#] (assoc init# [fx-name-key# (second val#)]
+                                                         (get fx-env# (second val#))))
+                                 {} param-val-list#)
+                         {:param-cnt (last param-nums#)})]))))))))
 
 (defmacro demo [instr & dur]
   `(let [instr# (~instr nil)

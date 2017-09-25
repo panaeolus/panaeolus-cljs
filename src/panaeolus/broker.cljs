@@ -109,7 +109,7 @@
                           (first initial-queue))
                   queue-buffer initial-queue
                   new-user-data nil
-                  last-tick (read-clock)
+                  last-tick @engine/ableton-clock-state ;;(read-clock)
                   stop? false
                   cur-fx (or initial-fx "")
                   last-fx (or initial-fx "")]
@@ -137,12 +137,13 @@
                                  last-tick
                                  mod-div (first next-event))
                       wait-chn (chan)]
-                  ;; (prn "timestamp: " timestamp "clock: " (engine/get-control-channel csound "panaeolusClock"))
+                  ;; (>! wait-chn (<= timestamp @engine/ableton-clock-state))
+                  ;; (engine/input-message csound (second next-event))
                   (loop []
-                    (if (<= timestamp (read-clock))
+                    (if (<= timestamp @engine/ableton-clock-state)
                       (do (engine/input-message csound (second next-event))
                           (put! wait-chn true))
-                      (do (<! (timeout 1))
+                      (do (<! (timeout 0.1))
                           (recur))))                
                   (when (<! wait-chn) 
                     (recur (inc index)
@@ -156,7 +157,8 @@
                            queue-buffer
                            (or (async/poll! user-input-channel)
                                new-user-data)
-                           (read-clock)
+                           @engine/ableton-clock-state
+                           ;; (read-clock)
                            stop?
                            (or fx cur-fx)
                            last-fx)))
@@ -185,7 +187,8 @@
                          (if stop?
                            (<! user-input-channel)
                            (async/poll! user-input-channel))
-                         (read-clock)
+                         @engine/ableton-clock-state
+                         ;; (read-clock)
                          false
                          nil
                          (or cur-fx last-fx)))))))))))

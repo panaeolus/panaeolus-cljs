@@ -111,4 +111,10 @@
              aR ratio feedback delay smooth)))
   [:ratio 1 :feedback 0.001 :delay 0.1 :smooth 1])
 
+(define-fx "exciter"
+  "src/panaeolus/csound/fx/exciter.udo"
+  (fn [aL aR ceil harm blend]
+    (format "\n%s,%s Exciter %s,%s,%s,%s,%s"
+            aL aR aL aR ceil harm blend))
+  [:ceil 2 :harm 12 :blend 1])
 

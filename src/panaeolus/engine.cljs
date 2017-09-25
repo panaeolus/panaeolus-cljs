@@ -10,7 +10,7 @@
   (:import [goog.structs PriorityQueue]))
 
 
-(def csound-target :wasm)
+(def csound-target :native)
 
 (def clock-source :link)
 
@@ -192,21 +192,35 @@
 
 (declare csound csound-object csound-instance)
 
-(go (<! wasm-loaded-chan)
-    (println "Loaded libcsound.js")
-    (def csound-object (create-csound-object csound-target))
-    (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
-    (def csound (case csound-target
-                  :wasm (CsoundWASM. csound-object csound-instance)
-                  :native (CsoundNative. csound-object csound-instance)))
+#_(go (<! wasm-loaded-chan)
+      (println "Loaded libcsound.js")
+      (def csound-object (create-csound-object csound-target))
+      (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
+      (def csound (case csound-target
+                    :wasm (CsoundWASM. csound-object csound-instance)
+                    :native (CsoundNative. csound-object csound-instance)))
 
-    (set-option csound "-odac")
-    (set-option csound "-d")
-    (set-option csound "-m0")
-    (start csound)
-    (compile-orc csound orc-init)
-    (input-message csound "i 10000 0 99999999999"))
+      (set-option csound "-odac")
+      (set-option csound "-d")
+      (set-option csound "-m0")
+      (start csound)
+      (compile-orc csound orc-init)
+      (input-message csound "i 10000 0 99999999999"))
 
+
+(def csound-object (create-csound-object csound-target))
+(def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
+(def csound (case csound-target
+              :wasm (CsoundWASM. csound-object csound-instance)
+              :native (CsoundNative. csound-object csound-instance)))
+
+(set-option csound "-odac")
+(set-option csound "-d")
+(set-option csound "-m0")
+(compile-orc csound orc-init)
+(start csound)
+
+(input-message csound "i 10000 0 99999999999")
 
 
 (comment 
@@ -255,6 +269,9 @@
 (defn ableton-link-update []
   (.update ableton-link))
 
+(defn ableton-link-set-beat [beat]
+  (.setBeatForce ableton-link beat))
+
 (defn ableton-link-get-beat []
   (.-beat ableton-link))
 
@@ -267,8 +284,16 @@
 (defn ableton-link-get-bpm []
   (.-bpm ableton-link))
 
+(defn ableton-link-get-peers []
+  (.getNumPeers ableton-link))
+
 (def bpm! nil)
 
+(def ableton-clock-state
+  (volatile! 0))
+
+(.startUpdate ableton-link 1
+              (fn [beat _ _] (vreset! ableton-clock-state beat)))
 
 ;;;;;;;;;;;;;;;;;;;
 ;; Record audio ;;;
