@@ -10,9 +10,9 @@
   (:import [goog.structs PriorityQueue]))
 
 
-(def csound-target :native)
+(def csound-target :wasm)
 
-(def clock-source :link)
+(def clock-source :native)
 
 (def wasm-loaded-chan (chan 1))
 
@@ -123,7 +123,8 @@
          play
          set-option
          start
-         get-control-channel)
+         get-control-channel
+         set-control-channel)
 
 (defprotocol CsoundInterface
   (compile-orc [this orc])
@@ -133,8 +134,8 @@
   (play [this])
   (set-option [this option])
   (start [this])
-  (get-control-channel [this ctrl-channel]))
-
+  (get-control-channel [this ctrl-channel])
+  (set-control-channel [this ctrl-channel val]))
 
 (deftype CsoundWASM [csound-object csound-instance]
   CsoundInterface
@@ -146,9 +147,7 @@
      csound-instance))
   (input-message [this input-message]
     ((.cwrap csound-object "CsoundObj_readScore" "number" #js ["number" "string"])
-     csound-instance input-message)
-    ;; (._CsoundObj_readScore csound-object csound-instance input-message)
-    )
+     csound-instance input-message))
   (reset [this] (._CsoundObj_reset csound-object csound-instance))
   (play [this] (._CsoundObj_play csound-object csound-instance))
   (set-option [this option]
@@ -160,16 +159,13 @@
     ((.cwrap csound-object "CsoundObj_prepareRT" nil #js ["number"])
      csound-instance)
     ((.cwrap csound-object "CsoundObj_compileOrc" "number" #js ["number" "string"])
-     csound-instance "nchnls=2\n 0dbfs=1\n")
-    ;;(._CsoundObj_compileOrc csound-object csound-instance "nchnls=2\n 0dbfs=1\n")
-
-    ;; (wasm-start csound-object csound-instance)
-
-    ;;(._CsoundObj_play csound-object csound-instance)
-    )
+     csound-instance "nchnls=2\n 0dbfs=1\n"))
   (get-control-channel [this ctrl-channel]
     ((.cwrap csound-object "CsoundObj_getControlChannel" #js ["number"] #js ["number" "string"])
-     csound-instance ctrl-channel)))
+     csound-instance ctrl-channel))
+  (set-control-channel [this ctrl-channel val]
+    ((.cwrap csound-object "CsoundObj_setControlChannel" nil #js ["number" "string" "number"])
+     csound-instance ctrl-channel val)))
 
 (deftype CsoundNative [csound-object csound-instance]
   CsoundInterface
@@ -187,40 +183,37 @@
     (.PerformAsync csound-object csound-instance
                    (fn [] (.Stop csound-object csound-instance))))
   (get-control-channel [this ctrl-channel]
-    (.GetControlChannel csound-object csound-instance ctrl-channel)))
+    (.GetControlChannel csound-object csound-instance ctrl-channel))
+  (set-control-channel [this ctrl-channel val]
+    (.SetControlChannel csound-object csound-instance ctrl-channel val)))
 
 
 (declare csound csound-object csound-instance)
 
-#_(go (<! wasm-loaded-chan)
+(if (= :wasm csound-target)
+  (go (<! wasm-loaded-chan)
       (println "Loaded libcsound.js")
       (def csound-object (create-csound-object csound-target))
       (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
-      (def csound (case csound-target
-                    :wasm (CsoundWASM. csound-object csound-instance)
-                    :native (CsoundNative. csound-object csound-instance)))
-
+      (def csound (CsoundWASM. csound-object csound-instance))
       (set-option csound "-odac")
       (set-option csound "-d")
       (set-option csound "-m0")
       (start csound)
       (compile-orc csound orc-init)
-      (input-message csound "i 10000 0 99999999999"))
-
-
-(def csound-object (create-csound-object csound-target))
-(def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
-(def csound (case csound-target
-              :wasm (CsoundWASM. csound-object csound-instance)
-              :native (CsoundNative. csound-object csound-instance)))
-
-(set-option csound "-odac")
-(set-option csound "-d")
-(set-option csound "-m0")
-(compile-orc csound orc-init)
-(start csound)
-
-(input-message csound "i 10000 0 99999999999")
+      (input-message csound "i 10000 0 99999999999")
+      (when (not= :link clock-source)
+        (input-message csound "i 1 0 99999999999")))
+  (do (def csound-object (create-csound-object csound-target))
+      (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
+      (def csound (CsoundNative. csound-object csound-instance))
+      (set-option csound "-odac")
+      (set-option csound "-d")
+      (compile-orc csound orc-init)
+      (start csound)
+      (input-message csound "i 10000 0 99999999999")
+      (when (not= :link clock-source)
+        (input-message csound "i 1 0 99999999999"))))
 
 
 (comment 
@@ -287,13 +280,16 @@
 (defn ableton-link-get-peers []
   (.getNumPeers ableton-link))
 
-(def bpm! nil)
+(defn bpm! [bpm]
+  (if (= clock-source :link)
+    (ableton-link-set-bpm bpm)
+    (set-control-channel csound "gkPanaeolusBPM" bpm)))
 
 (def ableton-clock-state
   (volatile! 0))
 
-(.startUpdate ableton-link 1
-              (fn [beat _ _] (vreset! ableton-clock-state beat)))
+;; (.startUpdate ableton-link 1
+;;               (fn [beat _ _] (vreset! ableton-clock-state beat)))
 
 ;;;;;;;;;;;;;;;;;;;
 ;; Record audio ;;;

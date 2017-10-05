@@ -145,7 +145,9 @@
                 (vec (repeat (count dur) xtim)))
               dur)
         dur (if-let [xtratim (:xtratim env)]
-              (map #(* % xtratim) dur)
+              (if (vector? xtratim)
+                (map #(* %1 %2) dur (cycle xtratim))
+                (map #(* % xtratim) dur))
               dur)
         env' (merge (nth instr 1) (nth instr 2) env)
         instr-indicies (:instr-indicies env)

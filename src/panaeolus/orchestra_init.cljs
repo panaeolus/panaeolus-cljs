@@ -13,14 +13,16 @@
   0dbfs=1\n
   sr=44100\n
   ksmps=128\n
+  seed 0\n
   " )
+
 (def expand-home-dir (js/require "expand-home-dir"))
 
 (def ^:private orc-init-globals
   (format "gkRecording init 0 \n
            gSRecordBaseLocation init \"%s\"\n
            gSRecordLocation init \"\"\n
-           gkPanaeolusBPM init 60 \n
+           gkPanaeolusBPM init 130 \n
 " (expand-home-dir "~/Music")))
 
 
@@ -41,7 +43,7 @@
   if kPhase < kLastPhase then
   kTicks += 1
   chnset kTicks, \"panaeolusClock\"
-  ;;printk 1, kTicks
+  ;; printk 1, gkPanaeolusBPM
   endif
   kLastPhase = kPhase
   endin
@@ -98,6 +100,11 @@
   aReverbRight chnget \"RvbR\"
   
   aRvbLeft, aRvbRight reverbsc aReverbLeft, aReverbRight, 0.85, 12000, sr, 0.5, 0
+
+  aMasterLeft  clip aMasterLeft,  1, 0.8
+  aMasterRight clip aMasterRight, 1, 0.8
+  aRvbLeft     clip aRvbLeft,     1, 0.8
+  aRvbRight    clip aRvbRight,    1, 0.8
 
   outs aMasterLeft+aRvbLeft,\\
        aMasterRight+aRvbRight

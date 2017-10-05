@@ -11,6 +11,19 @@
    :p5 {:freq 200}
    :p6 {:env 1}})
 
+(definstrument "pm"
+  "src/panaeolus/csound/orchestra/synth/pm.orc"
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:freq 200}
+   :p6 {:index1 0.3}
+   :p7 {:index2 0.2}
+   :p8 {:index3 0.1}
+   :p9 {:ratio1 1.1}
+   :p10 {:ratio2 1.7}
+   :p11 {:ratio3 2.05}
+   :p12 {:car 0.6}})
+
 (definstrument "nuclear"
   "src/panaeolus/csound/orchestra/synth/nuclear.orc"
   {:p3 {:dur 1}

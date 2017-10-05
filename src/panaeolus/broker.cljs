@@ -140,7 +140,7 @@
                   ;; (>! wait-chn (<= timestamp @engine/ableton-clock-state))
                   ;; (engine/input-message csound (second next-event))
                   (loop []
-                    (if (<= timestamp @engine/ableton-clock-state)
+                    (if (<= timestamp (read-clock))
                       (do (engine/input-message csound (second next-event))
                           (put! wait-chn true))
                       (do (<! (timeout 0.1))
@@ -157,8 +157,8 @@
                            queue-buffer
                            (or (async/poll! user-input-channel)
                                new-user-data)
-                           @engine/ableton-clock-state
-                           ;; (read-clock)
+                           (read-clock)
+                           ;; @engine/ableton-clock-state
                            stop?
                            (or fx cur-fx)
                            last-fx)))
@@ -187,8 +187,8 @@
                          (if stop?
                            (<! user-input-channel)
                            (async/poll! user-input-channel))
-                         @engine/ableton-clock-state
-                         ;; (read-clock)
+                         ;; @engine/ableton-clock-state
+                         (read-clock)
                          false
                          nil
                          (or cur-fx last-fx)))))))))))
