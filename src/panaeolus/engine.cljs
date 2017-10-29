@@ -9,19 +9,21 @@
                     :refer [go go-loop]])
   (:import [goog.structs PriorityQueue]))
 
+(def csound-target :udp)
 
-(def csound-target :wasm)
-
-(def clock-source :native)
+(def clock-source :link)
 
 (def wasm-loaded-chan (chan 1))
 
 (go (>! wasm-loaded-chan (fn? (.-_CsoundObj_new (.-asm js/Module)))))
 
+(declare csound csound-object csound-instance)
+
 (defn create-csound-object [target]
   (case target
     :wasm js/Module
-    :native (js/require "csound-api")))
+    :native (js/require "csound-api")
+    :udp (js/require "csound-udp")))
 
 (defn create-csound-instance [target csound-object]
   (case target
@@ -187,47 +189,81 @@
   (set-control-channel [this ctrl-channel val]
     (.SetControlChannel csound-object csound-instance ctrl-channel val)))
 
+;; Accumilate all compile-orc in 1 string to prevent
+;; some code being evaluated too early at startup
 
-(declare csound csound-object csound-instance)
+(def ^:private csound-udp-init-seq (atom {:orc [] :score []}))
 
-(if (= :wasm csound-target)
-  (go (<! wasm-loaded-chan)
-      (println "Loaded libcsound.js")
-      (def csound-object (create-csound-object csound-target))
-      (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
-      (def csound (CsoundWASM. csound-object csound-instance))
-      (set-option csound "-odac")
-      (set-option csound "-d")
-      (set-option csound "-m0")
-      (start csound)
-      (compile-orc csound orc-init)
-      (input-message csound "i 10000 0 99999999999")
-      (when (not= :link clock-source)
-        (input-message csound "i 1 0 99999999999")))
-  (do (def csound-object (create-csound-object csound-target))
-      (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
-      (def csound (CsoundNative. csound-object csound-instance))
-      (set-option csound "-odac")
-      (set-option csound "-d")
-      (compile-orc csound orc-init)
-      (start csound)
-      (input-message csound "i 10000 0 99999999999")
-      (when (not= :link clock-source)
-        (input-message csound "i 1 0 99999999999"))))
+(def ^:private csound-udp-ready? (atom false))
+
+(defn csound-udp-startup-fn
+  "Only send inital compile-orc string
+   when 1 second has passed where it's
+   of the same size."
+  [csound-object]
+  (go
+    (<! (timeout 10000))
+    (do (run! #(go (<! (timeout 5))
+                   (.compileOrc csound-object %)) (:orc @csound-udp-init-seq))
+        (<! (timeout 500))
+        (run! #(.inputMessage csound-object %) (:score @csound-udp-init-seq))
+        (reset! csound-udp-ready? true)
+        (.inputMessage csound-object "i 10000 0 99999999999"))
+    #_(if (= size (count (:orc @csound-udp-init-seq)))
+        (if (= 0 retry)
+          (recur (count (:orc @csound-udp-init-seq))
+                 (inc retry))
+          (do (run! #(.compileOrc csound-object %) (:orc @csound-udp-init-seq))
+              (run! #(.inputMessage csound-object %) (:score @csound-udp-init-seq))
+              (reset! csound-udp-ready? true)))
+        (recur (count (:orc @csound-udp-init-seq))
+               0))))
+
+(deftype CsoundUDP [csound-object]
+  CsoundInterface
+  (compile-orc [this orc]
+    (if @csound-udp-ready?
+      (.compileOrc csound-object orc)
+      (swap! csound-udp-init-seq assoc :orc (conj (:orc @csound-udp-init-seq) orc))))
+  (input-message [this input-message]
+    (if @csound-udp-ready?
+      (.inputMessage csound-object input-message)
+      (swap! csound-udp-init-seq assoc :score (conj (:score @csound-udp-init-seq) input-message)))))
 
 
-(comment 
-  (start csound)
-  ;; (play csound)
-  (compile-orc csound
-               (str "instr 1\n"
-                    "a1 poscil 0.9, 200\n"
-                    "outs a1, a1\n"
-                    "endin\n"))
-  (input-message csound "f0 60")
-  (input-message csound "i 1 0 1")
-  (reset csound)
-  (start csound))
+(case csound-target
+  :wasm (go (<! wasm-loaded-chan)
+            (println "Loaded libcsound.js")
+            (def csound-object (create-csound-object csound-target))
+            (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
+            (def csound (CsoundWASM. csound-object csound-instance))
+            (set-option csound "-odac")
+            (set-option csound "-d")
+            (set-option csound "-m0")
+            (start csound)
+            (compile-orc csound orc-init)
+            (input-message csound "i 10000 0 99999999999")
+            (when (not= :link clock-source)
+              (input-message csound "i 1 0 99999999999")))
+  :native (do (def csound-object (create-csound-object csound-target))
+              (def csound-instance (create-csound-instance panaeolus.engine/csound-target panaeolus.engine/csound-object))
+              (def csound (CsoundNative. csound-object csound-instance))
+              (set-option csound "-odac")
+              (set-option csound "-d")
+              (compile-orc csound orc-init)
+              (start csound)
+              (input-message csound "i 10000 0 99999999999")
+              (when (not= :link clock-source)
+                (input-message csound "i 1 0 99999999999")))
+  :udp (do (def csound-object (create-csound-object csound-target))
+           (def csound (CsoundUDP. csound-object))
+           (.compileOrc csound-object orc-init)
+           ;; (compile-orc csound orc-init)
+           (csound-udp-startup-fn csound-object)
+           (when (not= :link clock-source)
+             (input-message csound "i 1 0 99999999999"))))
+
+
 
 
 (def expand-home-dir (js/require "expand-home-dir"))

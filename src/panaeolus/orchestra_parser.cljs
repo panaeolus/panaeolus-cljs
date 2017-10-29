@@ -60,9 +60,9 @@
     ;; (prn "FX ENV: " (:fx env))
     (if (contains? @csound-instrument-map name)
       (let [instr-number (get @csound-instrument-map name)
-            ;; _ (prn "instr-name: " name "INSTR NUMBER: " instr-number)
             instr-string (replace-instr-number instr instr-number)
             [instr-string env] (insert-zak-and-fx instr-string env)
+            ;; _ (prn instr-string)
             env (assoc env :recompile-fn (fn [] (engine/compile-orc csound instr-string)))]
         [instr-number env])
       (let [instr-number (->> @csound-instrument-map

@@ -31,10 +31,11 @@
    (fs/slurp "src/panaeolus/csound/tables/tables.orc") "\n"
    (fs/slurp "src/panaeolus/csound/tables/oscil_bank.orc") "\n"
    (fs/slurp "src/panaeolus/csound/tables/hammer.orc") "\n"
-   (fs/slurp "src/panaeolus/csound/tables/scanned.orc")))
+   (fs/slurp "src/panaeolus/csound/tables/scanned.orc") "\n"
+   ))
 
-(def ^:private orc-init-instr-1
-  "instr 1
+(def ^:private orc-init-instr-1 ""
+  #_"instr 1
   setksmps 1
   kLastPhase init 0
   kTicks     init 0
@@ -54,45 +55,45 @@
      (fs/slurp "src/panaeolus/csound/fx/pitch_shifter.udo") "\n"
      (fs/slurp "src/panaeolus/csound/fx/pitch_shifter_2.udo") "\n"))
 
+;; Record controller
+;; instr  9999
+;; gkRecording = p4
+;; if gkRecording > 0 then
+;;   ;;generating a different filename each time csound renders
+;;   itim     date
+;;   Stim     dates     itim
+;;   Syear    strsub    Stim, 20, 24
+;;   Smonth   strsub    Stim, 4, 7
+;;   Sday     strsub    Stim, 8, 10
+;;   iday     strtod    Sday
+;;   Shor     strsub    Stim, 11, 13
+;;   Smin     strsub    Stim, 14, 16
+;;   Ssec     strsub    Stim, 17, 19
+;;   gSRecordLocation sprintf  \"%s/%s_%s_%02d_%s_%s_%s.wav\",\\
+;;                              gSRecordBaseLocation,\\ 
+;;                              Syear, Smonth, iday, Shor,Smin, Ssec
+;;   SRecorder = {{ 
+;;   instr 10001
+;;   aL, aR monitor
+;;   fout gSRecordLocation, 4, aL, aR
+;;   if gkRecording == 0 then
+;;     turnoff
+;;   endif
+;;   endin
+;;   }}
+;;   kactive active 10001
+;;   iactive active 10001
+;;   if (kactive == 1) || (iactive == 1)  then
+;;   else
+;;     iresult compilestr SRecorder
+;;     event \"i\", 10001, 0, 3600*24
+;;   endif
+;; endif
+;; endin
+;; Master output
+
 (def ^:private orc-init-bottom
   "
-  ;; Record controller
-  ;; instr  9999
-  ;; gkRecording = p4
-  ;; if gkRecording > 0 then
-  ;;   ;;generating a different filename each time csound renders
-  ;;   itim     date
-  ;;   Stim     dates     itim
-  ;;   Syear    strsub    Stim, 20, 24
-  ;;   Smonth   strsub    Stim, 4, 7
-  ;;   Sday     strsub    Stim, 8, 10
-  ;;   iday     strtod    Sday
-  ;;   Shor     strsub    Stim, 11, 13
-  ;;   Smin     strsub    Stim, 14, 16
-  ;;   Ssec     strsub    Stim, 17, 19
-  ;;   gSRecordLocation sprintf  \"%s/%s_%s_%02d_%s_%s_%s.wav\",\\
-  ;;                              gSRecordBaseLocation,\\ 
-  ;;                              Syear, Smonth, iday, Shor,Smin, Ssec
-  ;;   SRecorder = {{ 
-  ;;   instr 10001
-  ;;   aL, aR monitor
-  ;;   fout gSRecordLocation, 4, aL, aR
-  ;;   if gkRecording == 0 then
-  ;;     turnoff
-  ;;   endif
-  ;;   endin
-  ;;   }}
-  ;;   kactive active 10001
-  ;;   iactive active 10001
-  ;;   if (kactive == 1) || (iactive == 1)  then
-  ;;   else
-  ;;     iresult compilestr SRecorder
-  ;;     event \"i\", 10001, 0, 3600*24
-  ;;   endif
-  ;; endif
-  ;; endin
-
-  ;; Master output
   instr 10000
   aMasterLeft chnget \"OutL\"
   aMasterRight chnget \"OutR\"

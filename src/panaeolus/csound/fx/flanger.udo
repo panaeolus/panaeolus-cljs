@@ -1,24 +1,40 @@
-opcode Flanger_stereo,aa,aakkkkkk ;MADE BY IAIN MCCURDY
-  aL,aR,krate,kdepth,kdelay,kfback,kmix, klfoshape xin
-  adlt interp kdelay
-  if klfoshape==1 then
-    amod oscili kdepth, krate, giParabola ;oscillator that makes use of the positive domain only u-shape parabola
-  elseif klfoshape==2 then
-    amod oscili kdepth, krate, giSine ;oscillator that makes use of the positive domain only sine wave
-  elseif klfoshape==3 then
-    amod oscili kdepth, krate, giTriangle ;oscillator that makes use of the positive domain only triangle
-  elseif klfoshape==4 then
-    amod randomi 0,kdepth,krate,1
+opcode Flanger_stereo,aa,aaiiii ;MADE BY IAIN MCCURDY
+  aL,aR,irate,idepth,ifback,ilfoshape xin
+  if ilfoshape==1 then
+    amod oscili idepth, irate, giParabola
+  elseif ilfoshape==2 then
+    amod oscili idepth, irate, giSine
+  elseif ilfoshape==3 then
+    amod oscili idepth, irate, giTriangle
+  elseif ilfoshape==4 then
+    amod randomi 0, idepth, irate,1
   else
-    amod randomh 0,kdepth,krate,1
+    amod randomh 0,idepth,irate,1
   endif
-  adlt sum adlt, amod ;static delay time and modulating delay time are summed
-  adelsigL flanger aL, adlt, kfback , 1.2 ;flanger signal created
+  adelsigL flanger aL, amod, ifback , 1.2
   adelsigL dcblock adelsigL
-  adelsigR flanger aR, adlt, kfback , 1.2 ;flanger signal created
+  adelsigR flanger aR, amod, ifback , 1.2
   adelsigR dcblock adelsigR
 
-  aL sum aL*(1-kmix), adelsigL*kmix ;create dry/wet mix
-  aR sum aR*(1-kmix), adelsigR*kmix
-  xout aL,aR ;send audio back to caller instrument
+  xout adelsigL,adelsigR
+endop
+
+
+opcode Flanger_mono,aa,aaiiii ;MADE BY IAIN MCCURDY
+  aL,aR,irate,idepth,ifback,ilfoshape xin
+  if ilfoshape==1 then
+    amod oscili idepth, irate, giParabola
+  elseif ilfoshape==2 then
+    amod oscili idepth, irate, giSine
+  elseif ilfoshape==3 then
+    amod oscili idepth, irate, giTriangle
+  elseif ilfoshape==4 then
+    amod randomi 0, idepth, irate,1
+  else
+    amod randomh 0,idepth,irate,1
+  endif
+  adelsig flanger (aL+aR)/2, amod, ifback , 1.2
+  adelsig dcblock adelsig
+
+  xout adelsig,adelsig
 endop

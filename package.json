@@ -23,12 +23,13 @@
     }
   },
   "dependencies": {
-    "abletonlink": "git://github.com/hlolli/node-abletonlink.git#c5fe4dc0106e5eac69af757f734f2dfab38419af",
+    "abletonlink": "0.0.5",
     "csound-api": "latest",
+    "csound-udp": "latest",
     "electron": "^1.6.11",
     "expand-home-dir": "0.0.3",
     "fastpriorityqueue": "0.2.3",
-    "lumo-cljs": "^1.7.0",
+    "lumo-cljs": "latest",
     "require-rebuild": "latest",
     "speaker": "^0.3.0",
     "web-audio-api": "^0.2.2"

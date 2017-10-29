@@ -18,3 +18,4 @@ node_modules
 dev
 build/
 front-end/lumo
+yarn.lock

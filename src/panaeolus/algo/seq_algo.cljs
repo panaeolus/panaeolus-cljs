@@ -27,4 +27,47 @@
         i
         (recur (inc i) (+ (slices i) sum))))))
 
+(defn dotted
+  "Takes even lengthed durs and breaks the rythm
+   into a dotted one of long-short."
+  [env]
+  (let [dur (:dur env)
+        new-dur (vec (map-indexed
+                      (fn [index dur]
+                        (if (even? index)
+                          (* dur 1.5)
+                          (* dur 0.5)))
+                      dur))]
+    (assoc env :dur new-dur)))
 
+
+
+(defn one-two
+  "Takes even lengthed durs and breaks the rythm
+   into a [1 0.5 0.5] rythm."
+  [env]
+  (let [dur (:dur env)
+        new-dur (vec (map-indexed
+                      (fn [index dur]
+                        (let [index (mod index 3)]
+                          (if (zero? index)
+                            dur
+                            (* dur 0.5))))
+                      dur))]
+    (assoc env :dur new-dur)))
+
+
+(defn two-one
+  "Takes even lengthed durs and breaks the rythm
+   into a [0.5 0.5 1] rythm."
+  [env]
+  (let [dur (:dur env)
+        new-dur (vec (map-indexed
+                      (fn [index dur]
+                        (let [index (mod index 3)]
+                          (if (or (zero? index)
+                                  (= 1 index))
+                            (* dur 0.5)
+                            dur)))
+                      dur))]
+    (assoc env :dur new-dur)))

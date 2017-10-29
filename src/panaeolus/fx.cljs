@@ -31,13 +31,13 @@
     (format"\n%s, %s LoFiS  %s, %s, %s, %s\n" aL aR aL aR bits fold))
   [:bits 6 :fold 0.1])
 
+
 (define-fx "flanger"
   "src/panaeolus/csound/fx/flanger.udo"
-  (fn [aL aR rate depth delay fback wet shape]
-    (format "\n %s, %s Flanger_stereo %s, %s, %s, %s, %s, %s, %s, %s \n"
-            aL aR aL aR rate depth delay fback wet shape))
-  [:rate 5.15 :depth 0.001 :delay 0.001 :fback 0
-   :wet 1 :shape 1])
+  (fn [aL aR rate depth fback shape]
+    (format "\n %s, %s Flanger_stereo %s, %s, %s, %s, %s, %s \n"
+            aL aR aL aR rate depth fback shape))
+  [:rate 5.15 :depth 0.001 :fback 0 :shape 1])
 
 (define-fx "delayl"
   "src/panaeolus/csound/fx/delay.udo"
@@ -125,13 +125,13 @@
             aL aR aL aR rate chaos depth offset width wet))
   [:rate 5.5 :chaos 0.1 :depth 0.1 :offset 0.001 :width 0.5 :wet 1])
 
-#_(define-fx "shred"
-    "src/panaeolus/csound/fx/shred.udo"
-    (fn [aL aR delay transpose rand depth
-         rate fback width wet gain pre?]
-      (format "\n%s,%s shred %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s"
-              aL aR aL aR delay transpose rand depth
-              rate fback width wet gain pre?))
-    [:delay 0.1 :transpose 1.5 :rand 0.6 :depth 2
-     :rate 5 :fback 0.3 :width 0.5 :wet 1 :gain 0.2 :pre? 0])
+(define-fx "shred"
+  "src/panaeolus/csound/fx/shred.udo"
+  (fn [aL aR delay transpose rand depth
+       rate fback width wet gain pre?]
+    (format "\n%s,%s shred %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s"
+            aL aR aL aR delay transpose rand depth
+            rate fback width wet gain pre?))
+  [:delay 0.1 :transpose 1.5 :rand 0.6 :depth 2
+   :rate 5 :fback 0.3 :width 0.5 :wet 1 :gain 0.2 :pre? 0])
 

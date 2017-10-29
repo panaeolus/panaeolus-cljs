@@ -44,8 +44,8 @@
             sample-num 1000]
        (if (empty? loop-v)
          (do (reset! all-samples samples)
-             (engine/input-message engine/csound "i 1 0 99999999")
              (when (= :wasm engine/csound-target)
+               (engine/input-message engine/csound "i 1 0 99999999")
                ;; Start the orchestra after sample load
                (engine/wasm-start engine/csound-object engine/csound-instance)
                (engine/input-message engine/csound "i 10000 0 99999999999"))
