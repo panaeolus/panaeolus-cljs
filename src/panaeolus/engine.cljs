@@ -13,6 +13,8 @@
 
 (def clock-source :link)
 
+(def csound-udp-port 6007)
+
 (def wasm-loaded-chan (chan 1))
 
 (go (>! wasm-loaded-chan (fn? (.-_CsoundObj_new (.-asm js/Module)))))
@@ -192,7 +194,9 @@
 ;; Accumilate all compile-orc in 1 string to prevent
 ;; some code being evaluated too early at startup
 
-(def ^:private csound-udp-init-seq (atom {:orc [] :score []}))
+(def csound-udp-init-seq (atom {:orc [] :score [] :samples []}))
+
+;; (count (:score @csound-udp-init-seq))
 
 (def ^:private csound-udp-ready? (atom false))
 
@@ -202,32 +206,30 @@
    of the same size."
   [csound-object]
   (go
-    (<! (timeout 10000))
-    (do (run! #(go (<! (timeout 5))
-                   (.compileOrc csound-object %)) (:orc @csound-udp-init-seq))
-        (<! (timeout 500))
-        (run! #(.inputMessage csound-object %) (:score @csound-udp-init-seq))
-        (reset! csound-udp-ready? true)
-        (.inputMessage csound-object "i 10000 0 99999999999"))
-    #_(if (= size (count (:orc @csound-udp-init-seq)))
-        (if (= 0 retry)
-          (recur (count (:orc @csound-udp-init-seq))
-                 (inc retry))
-          (do (run! #(.compileOrc csound-object %) (:orc @csound-udp-init-seq))
-              (run! #(.inputMessage csound-object %) (:score @csound-udp-init-seq))
-              (reset! csound-udp-ready? true)))
-        (recur (count (:orc @csound-udp-init-seq))
-               0))))
+    (<! (timeout 1000))
+    (.compileOrc csound-object orc-init csound-udp-port)
+    (<! (timeout 5000))
+    (doseq [orc (:orc @csound-udp-init-seq)]
+      (<! (timeout 200))
+      (.compileOrc csound-object orc csound-udp-port))
+    (<! (timeout 200))
+    (.compileOrc csound-object (apply str (:samples @csound-udp-init-seq)) csound-udp-port)
+    (<! (timeout 500))
+    (run! #(.inputMessage csound-object % csound-udp-port) (:score @csound-udp-init-seq))
+    (reset! csound-udp-ready? true)
+    (<! (timeout 500))
+    (.inputMessage csound-object "i 10000 0 99999999999" csound-udp-port)
+    (println "Panaeolus loaded!\n")))
 
 (deftype CsoundUDP [csound-object]
   CsoundInterface
   (compile-orc [this orc]
     (if @csound-udp-ready?
-      (.compileOrc csound-object orc)
+      (.compileOrc csound-object orc csound-udp-port)
       (swap! csound-udp-init-seq assoc :orc (conj (:orc @csound-udp-init-seq) orc))))
   (input-message [this input-message]
     (if @csound-udp-ready?
-      (.inputMessage csound-object input-message)
+      (.inputMessage csound-object input-message csound-udp-port)
       (swap! csound-udp-init-seq assoc :score (conj (:score @csound-udp-init-seq) input-message)))))
 
 
@@ -257,13 +259,10 @@
                 (input-message csound "i 1 0 99999999999")))
   :udp (do (def csound-object (create-csound-object csound-target))
            (def csound (CsoundUDP. csound-object))
-           (.compileOrc csound-object orc-init)
            ;; (compile-orc csound orc-init)
            (csound-udp-startup-fn csound-object)
            (when (not= :link clock-source)
              (input-message csound "i 1 0 99999999999"))))
-
-
 
 
 (def expand-home-dir (js/require "expand-home-dir"))
@@ -350,5 +349,5 @@
   (fs/slurp file))
 
 (defn csound-compile-file [file]
-  (:compile-orc csound (fs/slurp (expand-home-dir file))))
+  (compile-orc csound (fs/slurp (expand-home-dir file))))
 

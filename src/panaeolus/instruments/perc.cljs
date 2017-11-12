@@ -10,4 +10,5 @@
    :p4 {:amp -12}
    :p5 {:freq 60.3}})
 
-;; (demo (kick :freq 50) 1)
+
+;; (demo (kick :freq 80 :amp -1) 1)

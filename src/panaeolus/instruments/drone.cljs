@@ -11,4 +11,5 @@
    :p5 {:freq 100}
    :p6 {:num 1}
    :p7 {:den 1}
-   :p8 {:risset 1}})
+   :p8 {:risset 1}
+   :p9 {:rate 0.1}})

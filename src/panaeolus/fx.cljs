@@ -118,6 +118,13 @@
             aL aR aL aR ceil harm blend))
   [:ceil 2 :harm 12 :blend 1])
 
+;; Only for samplers
+(define-fx "paulstretch"
+  nil
+  (fn [aL aR]
+    (format "\n%s paulstretch p3, 0.2, p6 \n %s = %s \n" aL aR aL))
+  [])
+
 (define-fx "chorus"
   "src/panaeolus/csound/fx/chorus.udo"
   (fn [aL aR rate chaos depth offset width wet]

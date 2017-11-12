@@ -9,6 +9,6 @@
   {:p3 {:dur 1}
    :p4 {:amp -12}
    :p5 {:midi 36}
-   :p6 {:fmd 0.2}})
+   :p6 {:fmd 0.01}})
 
 ;; (demo (bass_trombone :midi 92 :amp -4 :fmd 0.15)) 

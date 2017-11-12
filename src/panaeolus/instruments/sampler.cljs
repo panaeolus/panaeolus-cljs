@@ -64,6 +64,15 @@
    :p6 {:sample 1104}
    :p7 {:samplefreq 130.82}})
 
+(definstrument "sample-stretch"
+  "src/panaeolus/csound/orchestra/sampler/sample-stretch.orc"
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:nnop 440}
+   :p6 {:freq 1000 :fn panaeolus.instruments.sampler/sampler-fn}
+   :p7 {:stretch 30}})
+
+
 ;; Hardcoded sample instruments
 ;; TODO add these to a private config.
 

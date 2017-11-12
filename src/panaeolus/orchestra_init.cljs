@@ -23,6 +23,7 @@
            gSRecordBaseLocation init \"%s\"\n
            gSRecordLocation init \"\"\n
            gkPanaeolusBPM init 130 \n
+           giSrutiActive init 0
 " (expand-home-dir "~/Music")))
 
 
@@ -31,8 +32,7 @@
    (fs/slurp "src/panaeolus/csound/tables/tables.orc") "\n"
    (fs/slurp "src/panaeolus/csound/tables/oscil_bank.orc") "\n"
    (fs/slurp "src/panaeolus/csound/tables/hammer.orc") "\n"
-   (fs/slurp "src/panaeolus/csound/tables/scanned.orc") "\n"
-   ))
+   (fs/slurp "src/panaeolus/csound/tables/scanned.orc") "\n"))
 
 (def ^:private orc-init-instr-1 ""
   #_"instr 1

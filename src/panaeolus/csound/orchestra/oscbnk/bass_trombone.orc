@@ -25,7 +25,7 @@ instr 1
   kFEnv linsegr 0,0.001,2,p3,1,0.001,0
   kCFoct limit 4.5*kFEnv,4,14 ;;0 = p
   kCF = cpsoct(kCFoct)
-  printk 0.1, kCF
+  
   asig tonex asig, kCF,6 ;;p?
   
   outs asig, asig

@@ -10,7 +10,13 @@
    :p5 {:freq 90}
    :p6 {:dist 1}})
 
+(definstrument "fmpluck5"
+  "src/panaeolus/csound/orchestra/pluck/fmpluck.orc"
+  {:p3 {:dur 1}
+   :p4 {:amp -12}
+   :p5 {:freq 90}})
 
-;; (demo (pluck :freq 1190 :amp -2 ))
+
+;; (demo (fmpluck5 :freq 150 :amp -2 :dur 0.5))
 
 

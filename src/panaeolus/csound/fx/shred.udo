@@ -4,7 +4,7 @@ opcode shred,aa,aaiiiiiiiiii
   iDepth,iRate,iFeedback,iWidth,iwet,\
   iGain,iPrePost xin
   ;; iFFTsizes[] fillarray 128,256,512,1024,2048,4096 ;arrayofFFTsizevalues
-  iFFTsize = 128
+  iFFTsize = 4*ksmps
 
   fsigInL pvsanal aL,iFFTsize,iFFTsize/4,iFFTsize,1 ;FFTanalyseaudio
   fsigInR pvsanal aR,iFFTsize,iFFTsize/4,iFFTsize,1 ;FFTanalyseaudio

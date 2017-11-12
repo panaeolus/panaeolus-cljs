@@ -35,7 +35,7 @@
   (demo (low_conga :amp 0))
   (demo (mid_conga :amp 0))
   (demo (high_conga :amp 0))
-  (demo (maraca :amp 0))
+  (demo (maraca :amp 0 :dur 10))
   (demo (clap :amp 0)) 
   )
 

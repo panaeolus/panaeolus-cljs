@@ -42,8 +42,8 @@
   {:p3 {:dur 1}
    :p4 {:amp -6}
    :p5 {:freq 100}
-   :p6 {:mod 3}
-   :p7 {:index 1}})
+   :p6 {:mod 0.1}
+   :p7 {:index 0.1}})
 
 (csound-compile-file "src/panaeolus/csound/udo/Partial.udo")
 

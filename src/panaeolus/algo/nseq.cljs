@@ -76,6 +76,7 @@
    <letter> = #'[a-zA-Z]+'
    <digit> = #'[0-9]+\\.?[0-9]*'")
 
+(seqable? nil)
 
 (defmethod nseq :parser
   [env nseq-s & grid+len]

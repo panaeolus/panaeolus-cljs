@@ -49,7 +49,8 @@
                ;; Start the orchestra after sample load
                (engine/wasm-start engine/csound-object engine/csound-instance)
                (engine/input-message engine/csound "i 10000 0 99999999999"))
-             (println "Panaeolus loaded!\n"))
+             (when (not= :udp engine/csound-target)
+               (println "Panaeolus loaded!\n")))
          (if (= "/" (last loop-v))
            (recur (subvec loop-v 0 (dec (count loop-v)))
                   (subvec sub-dir 0 (dec (count sub-dir)))
@@ -70,12 +71,15 @@
                       sub-dir)
                     (if (and (not item-is-directory?)
                              item-is-wav?)
-                      (let [kw (keyword (last sub-dir))]
-                        (engine/compile-orc csound (str "gi_ ftgen " sample-num ",0,0,1,\""
-                                                        ;; item-path
-                                                        (if (= :wasm engine/csound-target)
-                                                          wasm-path item-path)
-                                                        "\",0,0,0\n"))
+                      (let [kw (keyword (last sub-dir))
+                            orc-string (str "gi_ ftgen " sample-num ",0,0,1,\""
+                                            ;; item-path
+                                            (if (= :wasm engine/csound-target)
+                                              wasm-path item-path)
+                                            "\",0,0,0\n")]
+                        (if (not= :udp engine/csound-target)
+                          (engine/compile-orc csound orc-string)
+                          (reset! engine/csound-udp-init-seq (update @engine/csound-udp-init-seq :samples conj orc-string)))
                         (assoc samples kw (if (contains? samples kw)
                                             (conj (kw samples) sample-num)
                                             [sample-num])))

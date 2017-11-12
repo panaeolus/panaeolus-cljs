@@ -20,5 +20,6 @@ instr 1
     kcnt += 1
   od
   asig linen iamp*amix*0dbfs/10,0.01,p3,0.01
-  outs asig,asig  
+  asig *= 0.25
+  outs asig,asig
 endin
