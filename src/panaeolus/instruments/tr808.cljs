@@ -1,8 +1,6 @@
 (ns panaeolus.instruments.tr808
-  (:require [macchiato.fs :as fs]
-            [panaeolus.engine :refer [csound expand-home-dir slurp]]
-            panaeolus.orchestra-parser)
-  (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
+  (:require panaeolus.macros)
+  (:require-macros [panaeolus.macros :refer [definstrument demo]]))
 
 
 (definstrument "low_conga"
@@ -32,11 +30,11 @@
 
 
 (comment
-  (demo (low_conga :amp 0))
+  (demo (low_conga :amp -2))
   (demo (mid_conga :amp 0))
   (demo (high_conga :amp 0))
   (demo (maraca :amp 0 :dur 10))
-  (demo (clap :amp 0)) 
+  (demo (clap :amp -1))
   )
 
 

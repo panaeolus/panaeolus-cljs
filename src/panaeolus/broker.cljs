@@ -1,16 +1,18 @@
 (ns panaeolus.broker
   (:require
    [cljs.core.async :refer [<! >! put! chan timeout] :as async]
-   [panaeolus.engine :refer [poll-channel csound
-                             pattern-registry bpm!] :as engine]
+   [panaeolus.engine :refer [poll-channel pattern-registry bpm!] :as engine]
    [goog.string :as gstring]
-   [panaeolus.orchestra-parser :refer [ast-input-messages-builder]])
+   [panaeolus.score-parser :refer [ast-input-messages-builder]]
+   ["libcsound" :as libcsound]
+   [csound-wasm.public :as csound])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
+
 
 
 (def tick-resolution 1024)
 
-(defn- calc-mod-div [meter durations]
+(defn calc-mod-div [meter durations]
   (if (= engine/clock-source :link)
     (max 1 meter)
     (let [meter (if meter
@@ -23,50 +25,17 @@
               (inc (quot (dec summed-durs) bar-length)))
            summed-durs)))))
 
-(defn- create-event-queue [durations input-messages]
-  (let [input-messages (if (string? input-messages)
-                         [input-messages]
-                         input-messages)]
-    (into #queue []
-          (if (number? durations)
-            (list durations)
-            (loop [dur (remove #(zero? %) durations)
-                   msg input-messages
-                   silence 0
-                   last-dur 0
-                   at []]
-              (if (empty? dur)
-                at
-                (let [fdur (first dur)]
-                  (recur (rest dur)
-                         (if (neg? fdur)
-                           msg
-                           (if (empty? msg)
-                             (rest input-messages)
-                             (rest msg)))
-                         (if (neg? fdur)
-                           (+ silence (Math/abs fdur))
-                           0)
-                         (if (neg? fdur)
-                           last-dur
-                           fdur)
-                         (if (neg? fdur)
-                           at
-                           (conj at [(+ last-dur
-                                        silence
-                                        (if (empty? at)
-                                          0 (first (last at))))
-                                     (or (first msg)
-                                         (first input-messages))]))))))))))
+;; (create-event-queue [0 1 2 3] [(fn [] :a) [(fn [] :c)]])
 
-
-(defn- calculate-timestamp [last-tick mod-div beat]
+(defn calculate-timestamp [last-tick mod-div beat]
   (if (= engine/clock-source :link)
-    (let [current-beat (max (mod last-tick mod-div) 0)
+    (let [last-tick (Math/ceil last-tick)
+          current-beat (max (mod last-tick mod-div) 0)
           delta (- beat current-beat)]
       (if (neg? delta)
         (+ beat last-tick (- mod-div current-beat))
         (+ last-tick delta)))
+    
     (let [beat (* beat tick-resolution)
           current-beat (max (mod last-tick mod-div) 0)
           delta (- beat current-beat)]
@@ -74,12 +43,48 @@
         (+ beat last-tick (- mod-div current-beat))
         (+ last-tick delta)))))
 
+;; (create-event-queue 100.1 0 [0 1.5 -2 3 10] [:a :b :c :d])
+;; (create-event-queue 100 0 [1 1 -1 1 1] [:a :b :c :d])
+
+(defn create-event-queue [last-tick mod-div beats event-callbacks]
+  (into #queue []
+        (loop [beats (remove #(zero? %) beats)
+               msg event-callbacks
+               silence 0
+               last-beat 0
+               at []]
+          (if (empty? beats)
+            (map #(vector (calculate-timestamp last-tick mod-div (first %))
+                          (second %)) at)
+            (let [fbeat (first beats)]
+              (recur (rest beats)
+                     (if (neg? fbeat)
+                       msg
+                       (if (empty? msg)
+                         (rest event-callbacks)
+                         (rest msg)))
+                     (if (neg? fbeat)
+                       (+ silence (Math/abs fbeat))
+                       0)
+                     (if (neg? fbeat)
+                       last-beat
+                       fbeat)
+                     (if (neg? fbeat)
+                       at
+                       (conj at [(+ last-beat
+                                    silence
+                                    (if (empty? at)
+                                      0 (first (last at))))
+                                 (or (first msg)
+                                     (first event-callbacks))]))))))))
 
 (defn- read-clock []
-  (if (= :link engine/clock-source)
-    (do (engine/ableton-link-update)
-        (engine/ableton-link-get-beat))
-    (engine/get-control-channel csound "panaeolusClock")))
+  (do (engine/ableton-link-update)
+      (engine/ableton-link-get-beat))
+  #_(if (= :link engine/clock-source)
+      (do (engine/ableton-link-update)
+          (engine/ableton-link-get-beat))
+      (engine/get-control-channel "panaeolusClock")))
 
 
 (defn pattern-loop-queue [env]
@@ -141,11 +146,12 @@
                   ;; (engine/input-message csound (second next-event))
                   (loop []
                     (if (<= timestamp (read-clock))
-                      (do (engine/input-message csound (second next-event))
-                          (put! wait-chn true))
+                      (.nextTick js/process
+                                 #(do (engine/input-message (second next-event))
+                                      (put! wait-chn true)))
                       (do (<! (timeout 0.1))
                           (recur))))                
-                  (when (<! wait-chn) 
+                  (when (<! wait-chn)
                     (recur (inc index)
                            (inc a-index)
                            loop-cnt
@@ -201,11 +207,95 @@
           instr (if (vector? instr)
                   instr (apply instr (mapcat identity env)))] 
       (when-not (or (empty? env) (nil? env))
+        (prn "HERE")
         (panaeolus.broker/pattern-loop-queue
-         (merge (panaeolus.orchestra-parser/ast-input-messages-builder
+         (merge (ast-input-messages-builder
                  (assoc env :pattern-name (name pattern-name)) instr)
                 {:pattern-name (str pattern-name)
                  :recompile-fn (:recompile-fn (nth instr 2))}))))))
+
+;; engine/input-message
+
+(defn at-do [timestamp wait-chan callback]
+  (go-loop []
+    (if (<= timestamp (read-clock))
+      (do (callback)
+          (put! wait-chan true))
+      (do (<! (timeout 2))
+          (recur)))))
+
+(defn unfold-env [init env]
+  (reduce (fn [i v] (merge i (v i))) init env))
+
+(P nil ((panaeolus.instruments.fof/priest :freq 200 :amp 10) :aa)
+   ;; (fn [env] (assoc env :a 1))
+   ;;(fn [env] (assoc env :a 2 :b 3))
+   )
+
+(defn P [pattern-name instr & env]
+  (let [pattern-name (str pattern-name)
+        instr (instr pattern-name)
+        ;; recompile-fn (-> instr (nth 2) :recompile-fn)
+        initial-tick (read-clock)
+        env (unfold-env (first instr) env)
+        ;; pattern-state
+        #_(atom {:beats (take 40 (cycle [0.25]))
+                 :events [(fn [event-state]
+                            (let [t (read-clock)]
+                              ((libcsound/cwrap "CsoundObj_inputMessage" "number" #js ["number" "string"])
+                               @csound/csound-instance (str "i 1 0 0 \"" t "\n\"\n i 3 0 1 -12"))
+
+                              ;;(engine/input-message (str "i 1 0 0 \"" t "\n\""))
+                              (println t))
+                            ;; (panaeolus.macros/demo (panaeolus.instruments.tr808/clap :amp -22))
+                            ;;(println "TEST: " (:index event-state))
+                            )]})
+        ]
+    #_(go-loop [pattern-queue (create-event-queue initial-tick
+                                                  (or (:mod-div @pattern-state) 0)
+                                                  (:beats @pattern-state)
+                                                  (:events @pattern-state))
+                index-counter [0 0]]
+        ;; (prn (map first pattern-queue))
+        (if (empty? pattern-queue)
+          nil
+          (let [[timestamp input-message-callback] (peek pattern-queue)
+                [index counter] index-counter
+                event-state (assoc @pattern-state
+                                   :index index :counter counter
+                                   :initial-tick initial-tick)
+                wait-chan (chan)]
+            (at-do timestamp wait-chan #(input-message-callback event-state))
+            (<! wait-chan)
+            (recur (pop pattern-queue)
+                   [(if (= 1 (count pattern-queue))
+                      0 (inc index))
+                    (inc counter)]))))
+    pattern-state))
+
+(js/setInterval #(let [t (read-clock)]
+                   ((libcsound/cwrap "CsoundObj_inputMessage" "number" #js ["number" "string"])
+                    @csound/csound-instance (str "i 1 0 0 \"" t "\n\"\n i 3 0 1 -12"))
+
+                   ;;(engine/input-message (str "i 1 0 0 \"" t "\n\""))
+                   (println t)) 1000)
+
+
+((panaeolus.instruments.fof/priest :freq 200 :amp 10) :aa)
+
+
+
+
+;; (P "bla" (fn [_]) )
+
+
+;; (peek #queue ["a" "b"])
+
+
+;; ((panaeolus.instruments.tr808/low_conga  :dur 10 :amp 2 :fx a) :aa)
+
+#_(P :a (panaeolus.instruments.tr808/low_conga  :amp 1)
+     (panaeolus.algo.nseq/nseq {} [0 1 2 3 4]))
 
 #_(defmacro P [pattern-name instr env]
     `(let [env# ~env         
@@ -241,19 +331,19 @@
 (comment 
   (pat :melody1 (panaeolus.instruments.tr808/low_conga)
        #_(seq [1 1 1 1:2] 2)
-
-       (panaeolus.macros/-> (assoc 
-                             :dur [1 1 1 0.25 0.125 0.125 0.5])
-                            (assoc :kill true)
-                            ))
+       {:dur [1 1 1 0.25 0.125 0.125 0.5]}
+       #_(panaeolus.macros/-> (assoc 
+                               :dur [1 1 1 0.25 0.125 0.125 0.5])
+                              ;; (assoc :kill true)
+                              ))
 
   (pattern-loop-queue
    (do (panaeolus.instruments.tr808/low_conga)
        (-> {:dur [1 1 1 -0.25 0.25 0.5]
             :pattern-name :abc
-            :input-messages "i 3 0 0.1 -8 100"
+            ;; :input-messages "i 3 0 0.1 -8 100"
             :meter 4
-            :kill true
+            ;; :kill true
             }
            (assoc :dur [1 1 1 0.125 0.125 0.25 0.5]))))
 

@@ -1,7 +1,8 @@
 (ns panaeolus.algo.nseq
   (:require [clojure.string :as string]
             [panaeolus.freq]
-            [instaparse.core :as insta :refer-macros [defparser]])
+            ;; [instaparse.core :as insta :refer-macros [defparser]]
+            )
   (:import [goog.string.isNumeric]
            [goog.string.toNumber]))
 
@@ -76,7 +77,6 @@
    <letter> = #'[a-zA-Z]+'
    <digit> = #'[0-9]+\\.?[0-9]*'")
 
-(seqable? nil)
 
 (defmethod nseq :parser
   [env nseq-s & grid+len]

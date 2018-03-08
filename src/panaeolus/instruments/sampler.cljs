@@ -1,10 +1,10 @@
 (ns panaeolus.instruments.sampler
-  (:require [macchiato.fs :as fs]
-            [clojure.string :as string]
+  (:require [clojure.string :as string]
             [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [csound] :as engine]
+            [panaeolus.engine :as engine]
             [panaeolus.freq :refer [midi->freq freq->midi]]
-            [panaeolus.samples :refer [all-samples]])
+            [panaeolus.samples :refer [all-samples]]
+            panaeolus.macros)
   (:require-macros [panaeolus.macros :refer [definstrument demo]]))
 
 
@@ -121,7 +121,7 @@
   (demo (stl-synths :sample 20 :freq 400))
 
   (demo (sampler :bank "stl-texture" :freq 14
-                 :fx [(distort)]
+                 ;; :fx [(distort)]
                  ))
 
   (count (get @all-samples :stl_synths)))

@@ -1,8 +1,6 @@
 (ns panaeolus.instruments.perc
-  (:require [macchiato.fs :as fs]
-            [panaeolus.algo.control :refer [group]]
-            [panaeolus.engine :refer [csound]])
-  (:require-macros [panaeolus.macros :refer [definstrument demo forever]]))
+  (:require panaeolus.macros)
+  (:require-macros [panaeolus.macros :refer [definstrument demo]]))
 
 (definstrument "kick"
   "src/panaeolus/csound/orchestra/perc/kick.orc"
@@ -11,4 +9,4 @@
    :p5 {:freq 60.3}})
 
 
-;; (demo (kick :freq 80 :amp -1) 1)
+;; (demo (kick -6 1990) 2)

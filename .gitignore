@@ -19,3 +19,6 @@ dev
 build/
 front-end/lumo
 yarn.lock
+src-bak
+lib
+.shadow-cljs

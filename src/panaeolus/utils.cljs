@@ -1,4 +1,6 @@
-(ns panaeolus.utils)
+(ns panaeolus.utils
+  (:require ["fs" :as fs]
+            ["expand-home-dir" :as ehd]))
 
 (defn process-arguments
   "Process the given arguments so that
@@ -20,3 +22,13 @@
                         (<= 2 (count given-params)))
                  (assoc param-map (first given-params) (second given-params))
                  (assoc param-map (ffirst default-params) (first given-params))))))))
+
+
+(process-arguments [:a 1 :b 2 :c 6] [1 2 :a 3])
+
+(defn slurp [file]
+  (str (fs/readFileSync file)))
+
+
+(defn expand-home-dir [file]
+  (ehd file))

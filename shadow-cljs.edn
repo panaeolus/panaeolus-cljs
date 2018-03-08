@@ -1,0 +1,10 @@
+{:dependencies [[org.clojure/core.specs.alpha "0.1.24"]
+                [org.clojure/clojurescript "1.10.126"]
+                [cider/cider-nrepl "0.17.0-SNAPSHOT"]
+                [andare "0.9.0"]
+                [csound-wasm "6.10.0-6"]]
+ :nrepl {:port 8202}
+ :source-paths ["src" "lib/instaparse-lumo-1.4.7.jar"]
+ :resource-paths []
+
+ }

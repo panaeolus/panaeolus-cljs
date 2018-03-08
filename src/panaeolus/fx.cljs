@@ -1,6 +1,7 @@
 (ns panaeolus.fx
-  (:import [goog.string format])
-  (:require-macros [panaeolus.macros :refer [define-fx]]))
+  (:require panaeolus.macros)
+  (:require-macros [panaeolus.macros :refer [define-fx]])
+  (:import [goog.string format]))
 
 (define-fx "freq-shift"
   nil
