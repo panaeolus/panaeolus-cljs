@@ -227,7 +227,7 @@
 (defn unfold-env [init env]
   (reduce (fn [i v] (merge i (v i))) init env))
 
-(P nil ((panaeolus.instruments.fof/priest :freq 200 :amp 10) :aa)
+(P :aa (panaeolus.instruments.fof/priest :freq 200 :amp 10)
    ;; (fn [env] (assoc env :a 1))
    ;;(fn [env] (assoc env :a 2 :b 3))
    )
@@ -251,6 +251,7 @@
                             ;;(println "TEST: " (:index event-state))
                             )]})
         ]
+    (prn env)
     #_(go-loop [pattern-queue (create-event-queue initial-tick
                                                   (or (:mod-div @pattern-state) 0)
                                                   (:beats @pattern-state)
@@ -271,7 +272,7 @@
                    [(if (= 1 (count pattern-queue))
                       0 (inc index))
                     (inc counter)]))))
-    pattern-state))
+    #_pattern-state))
 
 (js/setInterval #(let [t (read-clock)]
                    ((libcsound/cwrap "CsoundObj_inputMessage" "number" #js ["number" "string"])
